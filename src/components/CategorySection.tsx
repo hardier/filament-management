@@ -18,15 +18,27 @@ interface Props {
 }
 
 const CATEGORY_COLORS: Record<FilamentCategory, string> = {
-  PLA: 'from-blue-600/20 to-blue-500/10 border-blue-500/30',
-  PETG: 'from-emerald-600/20 to-emerald-500/10 border-emerald-500/30',
-  Other: 'from-purple-600/20 to-purple-500/10 border-purple-500/30',
+  'PLA Basic':  'from-blue-600/20   to-blue-500/10   border-blue-500/30',
+  'PLA Matte':  'from-indigo-600/20 to-indigo-500/10 border-indigo-500/30',
+  'PLA Silk':   'from-yellow-600/20 to-yellow-500/10 border-yellow-500/30',
+  'PETG Basic': 'from-emerald-600/20 to-emerald-500/10 border-emerald-500/30',
+  'PETG HF':    'from-teal-600/20   to-teal-500/10   border-teal-500/30',
+  'ABS':        'from-orange-600/20 to-orange-500/10 border-orange-500/30',
+  'ASA':        'from-red-600/20    to-red-500/10    border-red-500/30',
+  'TPU 95A':    'from-purple-600/20 to-purple-500/10 border-purple-500/30',
+  'Other':      'from-gray-600/20   to-gray-500/10   border-gray-500/30',
 };
 
 const BADGE_COLORS: Record<FilamentCategory, string> = {
-  PLA: 'bg-blue-500/20 text-blue-300 border border-blue-500/30',
-  PETG: 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
-  Other: 'bg-purple-500/20 text-purple-300 border border-purple-500/30',
+  'PLA Basic':  'bg-blue-500/20   text-blue-300   border border-blue-500/30',
+  'PLA Matte':  'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30',
+  'PLA Silk':   'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30',
+  'PETG Basic': 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30',
+  'PETG HF':    'bg-teal-500/20   text-teal-300   border border-teal-500/30',
+  'ABS':        'bg-orange-500/20 text-orange-300 border border-orange-500/30',
+  'ASA':        'bg-red-500/20    text-red-300    border border-red-500/30',
+  'TPU 95A':    'bg-purple-500/20 text-purple-300 border border-purple-500/30',
+  'Other':      'bg-gray-500/20   text-gray-300   border border-gray-500/30',
 };
 
 export default function CategorySection({
