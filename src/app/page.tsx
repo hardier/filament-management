@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback, useRef } from 'react';
 import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2 } from 'lucide-react';
 import type { FilamentColor, FilamentSection, FilamentType, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
-import { getLocalInventory, setLocalInventory } from '@/lib/storage';
+import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
 import { fetchInventory, pushInventory } from '@/lib/api';
 import { matchesColorFamily } from '@/lib/color-filter';
 import CategorySection from '@/components/CategorySection';
@@ -29,8 +29,9 @@ export default function Home() {
     setSyncState('syncing');
     fetchInventory().then((remote) => {
       if (remote && remote.length > 0) {
-        setInventory(remote);
-        setLocalInventory(remote);
+        const migrated = migrateInventory(remote as unknown[]);
+        setInventory(migrated);
+        setLocalInventory(migrated);
         setSyncState('synced');
       } else if (remote === null) {
         pushInventory(local).then((ok) => setSyncState(ok ? 'synced' : 'error'));

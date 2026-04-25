@@ -39,6 +39,10 @@ function migrate(raw: Record<string, unknown>): FilamentColor {
   };
 }
 
+export function migrateInventory(raw: unknown[]): FilamentColor[] {
+  return (raw as Record<string, unknown>[]).map(migrate);
+}
+
 // ── Local cache ────────────────────────────────────────────────
 
 export function getLocalInventory(): FilamentColor[] {
