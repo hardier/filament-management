@@ -1,19 +1,41 @@
-import type { FilamentColor, FilamentCategory } from './types';
+import type { FilamentColor, FilamentSection, FilamentType } from './types';
 import { getDefaultFilaments } from './bambu-colors';
 
 const INVENTORY_KEY = 'filament-inventory';
 
-// ── Category migration for data saved with old category names ──
-const CATEGORY_MIGRATION: Record<string, FilamentCategory> = {
-  PLA: 'PLA Basic',
-  PETG: 'PETG Basic',
+// ── Migration: map old category strings → new section + type ──
+const OLD_TO_SECTION: Record<string, FilamentSection> = {
+  PLA: 'PLA', 'PLA Basic': 'PLA', 'PLA Matte': 'PLA', 'PLA Silk': 'PLA', 'PLA Sparkle': 'PLA',
+  PETG: 'PETG', 'PETG Basic': 'PETG', 'PETG HF': 'PETG', 'PETG Translucent': 'PETG', 'PETG-CF': 'PETG',
+  ABS: 'Other', ASA: 'Other', 'TPU 95A': 'Other', Other: 'Other',
 };
 
-function migrateRecord(f: FilamentColor): FilamentColor {
+const OLD_TO_TYPE: Record<string, FilamentType> = {
+  PLA: 'PLA Basic', 'PLA Basic': 'PLA Basic', 'PLA Matte': 'PLA Matte',
+  'PLA Silk': 'PLA Silk', 'PLA Sparkle': 'PLA Sparkle',
+  PETG: 'PETG Basic', 'PETG Basic': 'PETG Basic', 'PETG HF': 'PETG HF',
+  'PETG Translucent': 'PETG Translucent', 'PETG-CF': 'PETG-CF',
+  ABS: 'ABS', ASA: 'ASA', 'TPU 95A': 'TPU 95A', Other: 'Other',
+};
+
+function migrate(raw: Record<string, unknown>): FilamentColor {
+  const oldCat = (raw.category ?? '') as string;
+  const section: FilamentSection = OLD_TO_SECTION[oldCat] ?? (
+    oldCat === 'PLA' || oldCat.startsWith('PLA') ? 'PLA' :
+    oldCat === 'PETG' || oldCat.startsWith('PETG') ? 'PETG' : 'Other'
+  );
+  const type: FilamentType = (raw.type as FilamentType) ?? OLD_TO_TYPE[oldCat] ?? 'Other';
+
   return {
-    ...f,
-    category: (CATEGORY_MIGRATION[f.category as string] ?? f.category) as FilamentCategory,
-    status: f.status ?? 'sealed',
+    id: raw.id as string,
+    name: raw.name as string,
+    hex: raw.hex as string,
+    category: section,
+    type,
+    brand: (raw.brand as string) ?? 'Bambu Lab',
+    count: (raw.count as number) ?? 0,
+    status: (raw.status as FilamentColor['status']) ?? 'sealed',
+    isCustom: (raw.isCustom as boolean) ?? false,
   };
 }
 
@@ -24,8 +46,8 @@ export function getLocalInventory(): FilamentColor[] {
   try {
     const raw = localStorage.getItem(INVENTORY_KEY);
     if (!raw) return getDefaultFilaments();
-    const parsed = JSON.parse(raw) as FilamentColor[];
-    return parsed.map(migrateRecord);
+    const parsed = JSON.parse(raw) as Record<string, unknown>[];
+    return parsed.map(migrate);
   } catch {
     return getDefaultFilaments();
   }

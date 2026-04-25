@@ -2,16 +2,16 @@
 
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import type { FilamentCategory } from '@/lib/types';
+import type { FilamentSection, FilamentType } from '@/lib/types';
+import { SECTION_TYPES } from '@/lib/types';
 import { KNOWN_COLOR_NAMES } from '@/lib/bambu-colors';
 
 interface Props {
-  category: FilamentCategory;
-  onAdd: (name: string, hex: string, brand: string) => void;
+  section: FilamentSection;
+  onAdd: (name: string, hex: string, brand: string, type: FilamentType) => void;
   onClose: () => void;
 }
 
-// Map known color names to a sensible default hex for auto-fill preview
 const NAME_TO_HEX: Record<string, string> = {
   'White': '#F8F8F8', 'Ivory White': '#F5F0E8', 'Cream': '#FFFACD', 'Beige': '#F2E2C4',
   'Lemon Yellow': '#FFF44F', 'Yellow': '#FFD700', 'Gold': '#D4AF37',
@@ -28,21 +28,22 @@ const NAME_TO_HEX: Record<string, string> = {
   'Transparent': '#E8F4F8', 'Natural': '#F5E6C8',
 };
 
-export default function AddColorModal({ category, onAdd, onClose }: Props) {
+export default function AddColorModal({ section, onAdd, onClose }: Props) {
+  const types = SECTION_TYPES[section];
   const [name, setName] = useState('');
   const [hex, setHex] = useState('#1DB954');
   const [brand, setBrand] = useState('Bambu Lab');
+  const [type, setType] = useState<FilamentType>(types[0]);
 
   function handleNameChange(value: string) {
     setName(value);
-    // Auto-fill hex when user picks a known name
     if (NAME_TO_HEX[value]) setHex(NAME_TO_HEX[value]);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    onAdd(name.trim(), hex, brand.trim() || 'Bambu Lab');
+    onAdd(name.trim(), hex, brand.trim() || 'Bambu Lab', type);
     onClose();
   }
 
@@ -54,17 +55,31 @@ export default function AddColorModal({ category, onAdd, onClose }: Props) {
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div className="bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm border border-gray-700 pb-safe">
-        {/* Handle bar (mobile) */}
         <div className="flex justify-center pt-3 sm:hidden">
           <div className="w-10 h-1 rounded-full bg-gray-600" />
         </div>
 
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
-          <h3 className="text-white font-semibold text-base">Add Color — {category}</h3>
+          <h3 className="text-white font-semibold text-base">Add Color — {section}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white p-1"><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
+          {/* Type selector */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">Type</label>
+            <select
+              value={type}
+              onChange={(e) => setType(e.target.value as FilamentType)}
+              className={inputCls}
+              style={{ fontSize: '16px' }}
+            >
+              {types.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+
           {/* Color name with datalist */}
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">Color Name</label>
@@ -105,7 +120,7 @@ export default function AddColorModal({ category, onAdd, onClose }: Props) {
           {/* Live preview */}
           <div
             className="h-10 rounded-lg flex items-center justify-center text-xs font-semibold shadow-inner"
-            style={{ backgroundColor: hex, color: hex }}
+            style={{ backgroundColor: hex }}
           >
             <span style={{ mixBlendMode: 'difference', color: 'white' }}>
               {name || 'Preview'}

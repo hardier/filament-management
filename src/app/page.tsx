@@ -2,11 +2,13 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2 } from 'lucide-react';
-import type { FilamentColor, FilamentCategory, SortMode, SyncState } from '@/lib/types';
-import { ALL_CATEGORIES } from '@/lib/types';
+import type { FilamentColor, FilamentSection, FilamentType, SortMode, SyncState } from '@/lib/types';
+import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory } from '@/lib/storage';
 import { fetchInventory, pushInventory } from '@/lib/api';
+import { matchesColorFamily } from '@/lib/color-filter';
 import CategorySection from '@/components/CategorySection';
+import FilterBar, { type FilterState } from '@/components/FilterBar';
 
 const PUSH_DEBOUNCE_MS = 1200;
 
@@ -15,6 +17,7 @@ export default function Home() {
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [editMode, setEditMode] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('color');
+  const [filter, setFilter] = useState<FilterState>({ section: null, colorFamily: null });
   const [mounted, setMounted] = useState(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -30,7 +33,6 @@ export default function Home() {
         setLocalInventory(remote);
         setSyncState('synced');
       } else if (remote === null) {
-        // Nothing on server yet — seed it with local data
         pushInventory(local).then((ok) => setSyncState(ok ? 'synced' : 'error'));
       } else {
         setSyncState('synced');
@@ -60,10 +62,10 @@ export default function Home() {
   function handleDelete(id: string) {
     persist(inventory.filter((f) => f.id !== id));
   }
-  function handleAdd(category: FilamentCategory, name: string, hex: string, brand: string) {
+  function handleAdd(section: FilamentSection, name: string, hex: string, brand: string, type: FilamentType) {
     const newColor: FilamentColor = {
       id: `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      name, hex, category, brand,
+      name, hex, category: section, type, brand,
       count: 0, status: 'sealed', isCustom: true,
     };
     persist([...inventory, newColor]);
@@ -72,6 +74,17 @@ export default function Home() {
   const totalSpools = inventory.reduce((s, f) => s + f.count, 0);
   const inStock = inventory.filter((f) => f.count > 0).length;
   const inUse = inventory.filter((f) => f.status && f.status !== 'sealed').length;
+
+  // Determine which sections to show and which filaments pass the color filter
+  const visibleSections = filter.section ? [filter.section] : ALL_SECTIONS;
+
+  function sectionFilaments(section: FilamentSection): FilamentColor[] {
+    let items = inventory.filter((f) => f.category === section);
+    if (filter.colorFamily) {
+      items = items.filter((f) => matchesColorFamily(f.hex, filter.colorFamily!));
+    }
+    return items;
+  }
 
   if (!mounted) {
     return (
@@ -97,7 +110,6 @@ export default function Home() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            {/* Sync status — read-only indicator, no modal */}
             <div
               title={
                 syncState === 'synced'  ? 'Synced with server' :
@@ -149,6 +161,11 @@ export default function Home() {
             </button>
           </div>
         </div>
+
+        {/* Filter bar */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3">
+          <FilterBar filter={filter} onChange={setFilter} />
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
@@ -159,18 +176,23 @@ export default function Home() {
           </div>
         )}
 
-        {ALL_CATEGORIES.map((cat) => (
-          <CategorySection
-            key={cat}
-            category={cat}
-            filaments={inventory.filter((f) => f.category === cat)}
-            editMode={editMode}
-            sortMode={sortMode}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
-            onAdd={(name, hex, brand) => handleAdd(cat, name, hex, brand)}
-          />
-        ))}
+        {visibleSections.map((sec) => {
+          const items = sectionFilaments(sec);
+          // Hide empty sections when a color filter is active
+          if (filter.colorFamily && items.length === 0) return null;
+          return (
+            <CategorySection
+              key={sec}
+              section={sec}
+              filaments={items}
+              editMode={editMode}
+              sortMode={sortMode}
+              onUpdate={handleUpdate}
+              onDelete={handleDelete}
+              onAdd={(name, hex, brand, type) => handleAdd(sec, name, hex, brand, type)}
+            />
+          );
+        })}
       </main>
     </div>
   );

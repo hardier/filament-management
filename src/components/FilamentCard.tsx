@@ -143,7 +143,7 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
       <div className="bg-gray-800 px-2.5 py-2 flex flex-col gap-1.5 flex-1">
         {/* Count */}
         <div className="flex items-center justify-between">
-          <span className="text-[10px] text-gray-500">Spools</span>
+          <span className="text-[11px] text-gray-400 font-medium">Spools</span>
           {editMode ? (
             <div className="flex items-center gap-1">
               <button
@@ -176,7 +176,7 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
             onCycle={cycleStatus}
           />
           {!editMode && filament.status === 'sealed' && (
-            <span className="text-[10px] text-gray-600">Sealed</span>
+            <span className="text-[11px] text-gray-400 font-medium">Sealed</span>
           )}
         </div>
       </div>
