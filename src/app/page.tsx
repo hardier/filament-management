@@ -18,7 +18,7 @@ export default function Home() {
   const [editMode, setEditMode] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('color');
   const [filter, setFilter] = useState<FilterState>({ sections: [], colorFamilies: [] });
-  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
+  const [showAvailableOnly, setShowAvailableOnly] = useState(true);
   const [mounted, setMounted] = useState(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 

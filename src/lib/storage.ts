@@ -5,14 +5,14 @@ const INVENTORY_KEY = 'filament-inventory';
 
 // ── Migration: map old category strings → new section + type ──
 const OLD_TO_SECTION: Record<string, FilamentSection> = {
-  PLA: 'PLA', 'PLA Basic': 'PLA', 'PLA Matte': 'PLA', 'PLA Silk': 'PLA', 'PLA Sparkle': 'PLA',
+  PLA: 'PLA', 'PLA Basic': 'PLA', 'PLA Matte': 'PLA', 'PLA Silk': 'PLA', 'PLA Sparkle': 'PLA', 'PLA Translucent': 'PLA',
   PETG: 'PETG', 'PETG Basic': 'PETG', 'PETG HF': 'PETG', 'PETG Translucent': 'PETG', 'PETG-CF': 'PETG',
   ABS: 'Other', ASA: 'Other', 'TPU 95A': 'Other', Other: 'Other',
 };
 
 const OLD_TO_TYPE: Record<string, FilamentType> = {
   PLA: 'PLA Basic', 'PLA Basic': 'PLA Basic', 'PLA Matte': 'PLA Matte',
-  'PLA Silk': 'PLA Silk', 'PLA Sparkle': 'PLA Sparkle',
+  'PLA Silk': 'PLA Silk', 'PLA Sparkle': 'PLA Sparkle', 'PLA Translucent': 'PLA Translucent',
   PETG: 'PETG Basic', 'PETG Basic': 'PETG Basic', 'PETG HF': 'PETG HF',
   'PETG Translucent': 'PETG Translucent', 'PETG-CF': 'PETG-CF',
   ABS: 'ABS', ASA: 'ASA', 'TPU 95A': 'TPU 95A', Other: 'Other',
