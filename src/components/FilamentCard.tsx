@@ -81,56 +81,66 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
     <div className="rounded-xl overflow-hidden shadow-md border border-white/10 flex flex-col">
       {/* Color swatch */}
       <div
-        className="h-20 flex items-center justify-center relative"
+        className="h-24 flex flex-col items-center justify-center relative"
         style={{ backgroundColor: filament.hex }}
       >
+        {/* Color name */}
         <span
-          className="text-xs font-semibold px-2 text-center leading-tight"
+          className="text-xs font-bold px-2 text-center leading-tight"
           style={{ color: textColor }}
         >
           {filament.name}
         </span>
+
+        {/* Brand badge — always visible at bottom of swatch */}
+        {!editMode || !editingBrand ? (
+          <div
+            className="absolute bottom-0 inset-x-0 flex items-center justify-between px-2 py-1"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)' }}
+          >
+            <span className="text-[11px] font-semibold text-white/90 truncate flex-1 leading-none">
+              {filament.brand}
+            </span>
+            {editMode && (
+              <button
+                onClick={() => setEditingBrand(true)}
+                className="flex-shrink-0 ml-1 text-white/60 hover:text-white transition-colors"
+              >
+                <Pencil size={10} />
+              </button>
+            )}
+          </div>
+        ) : (
+          /* Inline brand editor overlaid on swatch */
+          <div className="absolute bottom-0 inset-x-0 flex items-center gap-1 px-1.5 pb-1.5 pt-4"
+            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}
+          >
+            <input
+              autoFocus
+              value={brandDraft}
+              onChange={(e) => setBrandDraft(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') commitBrand(); if (e.key === 'Escape') cancelBrand(); }}
+              className="flex-1 bg-black/40 text-white text-xs rounded px-1.5 py-0.5 outline-none border border-white/40 min-w-0"
+              style={{ fontSize: '16px' }}
+            />
+            <button onClick={commitBrand} className="text-green-300 hover:text-green-200 p-0.5"><Check size={12} /></button>
+            <button onClick={cancelBrand} className="text-red-300 hover:text-red-200 p-0.5"><X size={12} /></button>
+          </div>
+        )}
+
         {editMode && filament.isCustom && (
           <button
             onClick={onDelete}
-            className="absolute top-1 right-1 p-1 rounded-full bg-black/20 hover:bg-black/40 transition-colors"
-            style={{ color: textColor }}
+            className="absolute top-1 right-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
             title="Remove color"
           >
-            <X size={12} />
+            <X size={11} />
           </button>
         )}
       </div>
 
       {/* Info */}
       <div className="bg-gray-800 px-2.5 py-2 flex flex-col gap-1.5 flex-1">
-        {/* Brand */}
-        <div className="flex items-center gap-1 min-h-[22px]">
-          {editMode && editingBrand ? (
-            <>
-              <input
-                autoFocus
-                value={brandDraft}
-                onChange={(e) => setBrandDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === 'Enter') commitBrand(); if (e.key === 'Escape') cancelBrand(); }}
-                className="flex-1 bg-gray-700 text-white text-base rounded px-1.5 py-0.5 outline-none border border-blue-500 min-w-0"
-                style={{ fontSize: '16px' }}
-              />
-              <button onClick={commitBrand} className="text-green-400 hover:text-green-300 p-1"><Check size={13} /></button>
-              <button onClick={cancelBrand} className="text-red-400 hover:text-red-300 p-1"><X size={13} /></button>
-            </>
-          ) : (
-            <>
-              <span className="text-[10px] text-gray-400 truncate flex-1">{filament.brand}</span>
-              {editMode && (
-                <button onClick={() => setEditingBrand(true)} className="text-gray-500 hover:text-gray-300 flex-shrink-0 p-0.5">
-                  <Pencil size={10} />
-                </button>
-              )}
-            </>
-          )}
-        </div>
-
         {/* Count */}
         <div className="flex items-center justify-between">
           <span className="text-[10px] text-gray-500">Spools</span>
@@ -159,7 +169,7 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
         </div>
 
         {/* Status */}
-        <div className="flex items-center justify-between min-h-[20px]">
+        <div className="flex items-center min-h-[20px]">
           <StatusIndicator
             status={filament.status ?? 'sealed'}
             editable={editMode}

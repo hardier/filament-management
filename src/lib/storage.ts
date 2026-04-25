@@ -1,7 +1,6 @@
 import type { FilamentColor, FilamentCategory } from './types';
 import { getDefaultFilaments } from './bambu-colors';
 
-const SYNC_ID_KEY = 'filament-sync-id';
 const INVENTORY_KEY = 'filament-inventory';
 
 // ── Category migration for data saved with old category names ──
@@ -16,22 +15,6 @@ function migrateRecord(f: FilamentColor): FilamentColor {
     category: (CATEGORY_MIGRATION[f.category as string] ?? f.category) as FilamentCategory,
     status: f.status ?? 'sealed',
   };
-}
-
-// ── Sync ID ────────────────────────────────────────────────────
-
-export function getSyncId(): string {
-  if (typeof window === 'undefined') return '';
-  const existing = localStorage.getItem(SYNC_ID_KEY);
-  if (existing) return existing;
-  const newId = crypto.randomUUID();
-  localStorage.setItem(SYNC_ID_KEY, newId);
-  return newId;
-}
-
-export function setSyncId(id: string): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(SYNC_ID_KEY, id.trim());
 }
 
 // ── Local cache ────────────────────────────────────────────────
