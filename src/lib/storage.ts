@@ -8,7 +8,9 @@ export function loadInventory(): FilamentColor[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return getDefaultFilaments();
-    return JSON.parse(raw) as FilamentColor[];
+    const parsed = JSON.parse(raw) as FilamentColor[];
+    // Migrate old records that predate the status field
+    return parsed.map((f) => ({ ...f, status: f.status ?? ('sealed' as const) }));
   } catch {
     return getDefaultFilaments();
   }

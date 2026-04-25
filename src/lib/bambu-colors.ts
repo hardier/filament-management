@@ -1,5 +1,21 @@
 import type { FilamentColor, FilamentCategory } from './types';
 
+// All known Bambu Lab color names, deduplicated, for use in the "add color" dropdown
+export const KNOWN_COLOR_NAMES = [
+  'White', 'Ivory White', 'Cream', 'Beige',
+  'Lemon Yellow', 'Yellow', 'Gold',
+  'Orange', 'Coral',
+  'Red', 'Dark Red',
+  'Pink', 'Magenta',
+  'Purple', 'Violet',
+  'Navy', 'Dark Blue', 'Blue', 'Sky Blue', 'Cyan',
+  'Teal', 'Jade', 'Bambu Green', 'Green', 'Dark Green', 'Olive', 'Mint',
+  'Brown', 'Dark Brown',
+  'Silver', 'Light Grey', 'Grey', 'Dark Grey', 'Charcoal', 'Black',
+  'Transparent',
+  'Natural',
+];
+
 const DEFAULT_BRAND = 'Bambu Lab';
 
 interface ColorDef {
@@ -79,6 +95,7 @@ export function getDefaultFilaments(): FilamentColor[] {
     category: def.category,
     brand: DEFAULT_BRAND,
     count: 0,
+    status: 'sealed' as const,
     isCustom: false,
   }));
 }

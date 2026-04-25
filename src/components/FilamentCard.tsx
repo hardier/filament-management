@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { Pencil, Check, X, Minus, Plus } from 'lucide-react';
-import type { FilamentColor } from '@/lib/types';
+import type { FilamentColor, FilamentStatus } from '@/lib/types';
+import { STATUS_CYCLE } from '@/lib/types';
 import { contrastColor } from '@/lib/color-utils';
 
 interface Props {
@@ -10,6 +11,44 @@ interface Props {
   editMode: boolean;
   onUpdate: (updated: FilamentColor) => void;
   onDelete: () => void;
+}
+
+const STATUS_META: Record<FilamentStatus, { label: string; filled: number; bar: string; badge: string }> = {
+  sealed:  { label: 'Sealed',  filled: 0, bar: 'bg-gray-400',   badge: 'bg-gray-700 text-gray-400 border-gray-600' },
+  high:    { label: 'High',    filled: 3, bar: 'bg-green-400',  badge: 'bg-green-900/60 text-green-300 border-green-600/50' },
+  medium:  { label: 'Medium',  filled: 2, bar: 'bg-yellow-400', badge: 'bg-yellow-900/60 text-yellow-300 border-yellow-600/50' },
+  low:     { label: 'Low',     filled: 1, bar: 'bg-red-400',    badge: 'bg-red-900/60 text-red-300 border-red-600/50' },
+};
+
+function StatusIndicator({ status, editable, onCycle }: {
+  status: FilamentStatus;
+  editable: boolean;
+  onCycle: () => void;
+}) {
+  const meta = STATUS_META[status];
+  const bars = [0, 1, 2].map((i) => (
+    <span
+      key={i}
+      className={`inline-block w-2.5 h-1.5 rounded-sm ${i < meta.filled ? meta.bar : 'bg-gray-600'}`}
+    />
+  ));
+
+  if (status === 'sealed' && !editable) return null;
+
+  return (
+    <button
+      type="button"
+      disabled={!editable}
+      onClick={onCycle}
+      title={editable ? `In-use level: ${meta.label} (tap to change)` : meta.label}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-medium leading-none transition-colors
+        ${meta.badge}
+        ${editable ? 'cursor-pointer hover:opacity-80 active:scale-95' : 'cursor-default'}`}
+    >
+      <span className="flex gap-0.5">{bars}</span>
+      <span>{meta.label}</span>
+    </button>
+  );
 }
 
 export default function FilamentCard({ filament, editMode, onUpdate, onDelete }: Props) {
@@ -32,6 +71,12 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
     onUpdate({ ...filament, count: next });
   }
 
+  function cycleStatus() {
+    const idx = STATUS_CYCLE.indexOf(filament.status ?? 'sealed');
+    const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
+    onUpdate({ ...filament, status: next });
+  }
+
   return (
     <div className="rounded-xl overflow-hidden shadow-md border border-white/10 flex flex-col">
       {/* Color swatch */}
@@ -40,7 +85,7 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
         style={{ backgroundColor: filament.hex }}
       >
         <span
-          className="text-sm font-semibold px-2 text-center leading-tight"
+          className="text-xs font-semibold px-2 text-center leading-tight"
           style={{ color: textColor }}
         >
           {filament.name}
@@ -48,7 +93,7 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
         {editMode && filament.isCustom && (
           <button
             onClick={onDelete}
-            className="absolute top-1 right-1 p-0.5 rounded-full bg-black/20 hover:bg-black/40 transition-colors"
+            className="absolute top-1 right-1 p-1 rounded-full bg-black/20 hover:bg-black/40 transition-colors"
             style={{ color: textColor }}
             title="Remove color"
           >
@@ -58,9 +103,9 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
       </div>
 
       {/* Info */}
-      <div className="bg-gray-800 px-3 py-2 flex flex-col gap-1.5 flex-1">
+      <div className="bg-gray-800 px-2.5 py-2 flex flex-col gap-1.5 flex-1">
         {/* Brand */}
-        <div className="flex items-center gap-1 min-h-[24px]">
+        <div className="flex items-center gap-1 min-h-[22px]">
           {editMode && editingBrand ? (
             <>
               <input
@@ -68,17 +113,18 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
                 value={brandDraft}
                 onChange={(e) => setBrandDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') commitBrand(); if (e.key === 'Escape') cancelBrand(); }}
-                className="flex-1 bg-gray-700 text-white text-xs rounded px-1.5 py-0.5 outline-none border border-blue-500 min-w-0"
+                className="flex-1 bg-gray-700 text-white text-base rounded px-1.5 py-0.5 outline-none border border-blue-500 min-w-0"
+                style={{ fontSize: '16px' }}
               />
-              <button onClick={commitBrand} className="text-green-400 hover:text-green-300"><Check size={13} /></button>
-              <button onClick={cancelBrand} className="text-red-400 hover:text-red-300"><X size={13} /></button>
+              <button onClick={commitBrand} className="text-green-400 hover:text-green-300 p-1"><Check size={13} /></button>
+              <button onClick={cancelBrand} className="text-red-400 hover:text-red-300 p-1"><X size={13} /></button>
             </>
           ) : (
             <>
-              <span className="text-xs text-gray-400 truncate flex-1">{filament.brand}</span>
+              <span className="text-[10px] text-gray-400 truncate flex-1">{filament.brand}</span>
               {editMode && (
-                <button onClick={() => setEditingBrand(true)} className="text-gray-500 hover:text-gray-300 flex-shrink-0">
-                  <Pencil size={11} />
+                <button onClick={() => setEditingBrand(true)} className="text-gray-500 hover:text-gray-300 flex-shrink-0 p-0.5">
+                  <Pencil size={10} />
                 </button>
               )}
             </>
@@ -87,20 +133,20 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
 
         {/* Count */}
         <div className="flex items-center justify-between">
-          <span className="text-xs text-gray-500">Spools</span>
+          <span className="text-[10px] text-gray-500">Spools</span>
           {editMode ? (
             <div className="flex items-center gap-1">
               <button
                 onClick={() => adjust(-1)}
                 disabled={filament.count === 0}
-                className="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center text-white transition-colors"
+                className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center text-white transition-colors"
               >
                 <Minus size={12} />
               </button>
               <span className="text-white font-bold text-sm w-6 text-center">{filament.count}</span>
               <button
                 onClick={() => adjust(1)}
-                className="w-6 h-6 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition-colors"
+                className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition-colors"
               >
                 <Plus size={12} />
               </button>
@@ -109,6 +155,18 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
             <span className={`font-bold text-sm ${filament.count === 0 ? 'text-gray-600' : 'text-white'}`}>
               {filament.count}
             </span>
+          )}
+        </div>
+
+        {/* Status */}
+        <div className="flex items-center justify-between min-h-[20px]">
+          <StatusIndicator
+            status={filament.status ?? 'sealed'}
+            editable={editMode}
+            onCycle={cycleStatus}
+          />
+          {!editMode && filament.status === 'sealed' && (
+            <span className="text-[10px] text-gray-600">Sealed</span>
           )}
         </div>
       </div>

@@ -40,6 +40,7 @@ export default function Home() {
       category,
       brand,
       count: 0,
+      status: 'sealed',
       isCustom: true,
     };
     persist([...inventory, newColor]);
@@ -47,6 +48,7 @@ export default function Home() {
 
   const totalSpools = inventory.reduce((s, f) => s + f.count, 0);
   const inStock = inventory.filter((f) => f.count > 0).length;
+  const inUse = inventory.filter((f) => f.status && f.status !== 'sealed').length;
 
   if (!mounted) {
     return (
@@ -66,36 +68,39 @@ export default function Home() {
             <h1 className="text-lg font-bold tracking-tight">Filament Manager</h1>
           </div>
 
-          {/* Stats */}
-          <div className="hidden sm:flex items-center gap-4 text-xs text-gray-400">
-            <span><span className="text-white font-semibold">{totalSpools}</span> spools total</span>
-            <span><span className="text-white font-semibold">{inStock}</span> colors in stock</span>
+          {/* Stats — hidden on mobile, shown on sm+ */}
+          <div className="hidden sm:flex items-center gap-3 text-xs text-gray-400">
+            <span><span className="text-white font-semibold">{totalSpools}</span> spools</span>
+            <span><span className="text-white font-semibold">{inStock}</span> in stock</span>
+            {inUse > 0 && (
+              <span><span className="text-orange-300 font-semibold">{inUse}</span> in use</span>
+            )}
           </div>
 
           {/* Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <button
               onClick={() => setSortMode((m) => m === 'color' ? 'availability' : 'color')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 sortMode === 'availability'
                   ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
                   : 'bg-gray-800 text-gray-400 hover:text-white border border-gray-700'
               }`}
-              title="Toggle sort"
+              title={sortMode === 'color' ? 'Sort by color' : 'Sort by stock'}
             >
-              {sortMode === 'color' ? <Palette size={14} /> : <ArrowDownUp size={14} />}
+              {sortMode === 'color' ? <Palette size={15} /> : <ArrowDownUp size={15} />}
               <span className="hidden sm:inline">{sortMode === 'color' ? 'By Color' : 'By Stock'}</span>
             </button>
 
             <button
               onClick={() => setEditMode((e) => !e)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                 editMode
                   ? 'bg-green-500/20 text-green-300 border border-green-500/30'
                   : 'bg-gray-800 text-gray-400 hover:text-white border border-gray-700'
               }`}
             >
-              {editMode ? <Check size={14} /> : <Pencil size={14} />}
+              {editMode ? <Check size={15} /> : <Pencil size={15} />}
               <span className="hidden sm:inline">{editMode ? 'Done' : 'Edit'}</span>
             </button>
           </div>

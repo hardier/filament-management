@@ -41,26 +41,34 @@ export default function CategorySection({
 
   const total = filaments.reduce((s, f) => s + f.count, 0);
   const inStock = filaments.filter((f) => f.count > 0).length;
+  const inUse = filaments.filter((f) => f.status && f.status !== 'sealed').length;
 
   return (
-    <section className={`rounded-2xl border bg-gradient-to-br ${CATEGORY_COLORS[category]} p-4`}>
+    <section className={`rounded-2xl border bg-gradient-to-br ${CATEGORY_COLORS[category]} p-3 sm:p-4`}>
       {/* Header */}
       <div
-        className="flex items-center gap-3 cursor-pointer select-none mb-4"
+        className="flex items-center gap-2 cursor-pointer select-none mb-3 sm:mb-4"
         onClick={() => setCollapsed((c) => !c)}
       >
-        <button className="text-gray-400 hover:text-white transition-colors flex-shrink-0">
-          {collapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
+        <button className="text-gray-400 hover:text-white transition-colors flex-shrink-0 p-1">
+          {collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
         </button>
-        <h2 className="text-white text-xl font-bold flex-1">{category}</h2>
-        <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${BADGE_COLORS[category]}`}>
-          {inStock}/{filaments.length} colors · {total} spools
-        </span>
+        <h2 className="text-white text-lg sm:text-xl font-bold flex-1">{category}</h2>
+        <div className="flex flex-col items-end gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+          <span className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full ${BADGE_COLORS[category]}`}>
+            {inStock}/{filaments.length} · {total} spools
+          </span>
+          {inUse > 0 && (
+            <span className="text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
+              {inUse} in use
+            </span>
+          )}
+        </div>
       </div>
 
       {!collapsed && (
         <>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
             {sorted.map((f) => (
               <FilamentCard
                 key={f.id}
@@ -74,9 +82,9 @@ export default function CategorySection({
             {editMode && (
               <button
                 onClick={() => setShowAddModal(true)}
-                className="rounded-xl border-2 border-dashed border-gray-600 hover:border-gray-400 h-full min-h-[120px] flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-gray-300 transition-colors"
+                className="rounded-xl border-2 border-dashed border-gray-600 hover:border-gray-400 min-h-[130px] flex flex-col items-center justify-center gap-2 text-gray-500 hover:text-gray-300 transition-colors active:scale-95"
               >
-                <Plus size={24} />
+                <Plus size={22} />
                 <span className="text-xs">Add Color</span>
               </button>
             )}
