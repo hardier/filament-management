@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2 } from 'lucide-react';
+import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck } from 'lucide-react';
 import type { FilamentColor, FilamentSection, FilamentType, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
@@ -17,7 +17,8 @@ export default function Home() {
   const [syncState, setSyncState] = useState<SyncState>('idle');
   const [editMode, setEditMode] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('color');
-  const [filter, setFilter] = useState<FilterState>({ section: null, colorFamily: null });
+  const [filter, setFilter] = useState<FilterState>({ sections: [], colorFamilies: [] });
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false);
   const [mounted, setMounted] = useState(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -76,13 +77,13 @@ export default function Home() {
   const inStock = inventory.filter((f) => f.count > 0).length;
   const inUse = inventory.filter((f) => f.status && f.status !== 'sealed').length;
 
-  // Determine which sections to show and which filaments pass the color filter
-  const visibleSections = filter.section ? [filter.section] : ALL_SECTIONS;
+  const visibleSections = filter.sections.length > 0 ? filter.sections : ALL_SECTIONS;
 
   function sectionFilaments(section: FilamentSection): FilamentColor[] {
     let items = inventory.filter((f) => f.category === section);
-    if (filter.colorFamily) {
-      items = items.filter((f) => matchesColorFamily(f.hex, filter.colorFamily!));
+    if (showAvailableOnly) items = items.filter((f) => f.count > 0);
+    if (filter.colorFamilies.length > 0) {
+      items = items.filter((f) => filter.colorFamilies.some((id) => matchesColorFamily(f.hex, id)));
     }
     return items;
   }
@@ -137,6 +138,19 @@ export default function Home() {
             </div>
 
             <button
+              onClick={() => setShowAvailableOnly((v) => !v)}
+              className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
+                showAvailableOnly
+                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/30'
+                  : 'bg-gray-800 text-gray-400 hover:text-white border-gray-700'
+              }`}
+              title={showAvailableOnly ? 'Showing in-stock only' : 'Showing all filaments'}
+            >
+              <PackageCheck size={14} />
+              <span className="hidden sm:inline">{showAvailableOnly ? 'In Stock' : 'All'}</span>
+            </button>
+
+            <button
               onClick={() => setSortMode((m) => m === 'color' ? 'availability' : 'color')}
               className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
                 sortMode === 'availability'
@@ -179,8 +193,8 @@ export default function Home() {
 
         {visibleSections.map((sec) => {
           const items = sectionFilaments(sec);
-          // Hide empty sections when a color filter is active
-          if (filter.colorFamily && items.length === 0) return null;
+          // Hide empty sections when any filter is active and nothing matches
+          if ((filter.colorFamilies.length > 0 || showAvailableOnly) && items.length === 0) return null;
           return (
             <CategorySection
               key={sec}

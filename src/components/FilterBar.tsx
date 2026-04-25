@@ -6,8 +6,8 @@ import { ALL_SECTIONS } from '@/lib/types';
 import { COLOR_FAMILIES } from '@/lib/color-filter';
 
 export interface FilterState {
-  section: FilamentSection | null;
-  colorFamily: string | null;
+  sections: FilamentSection[];
+  colorFamilies: string[];
 }
 
 interface Props {
@@ -22,18 +22,24 @@ const SECTION_STYLE: Record<FilamentSection, string> = {
 };
 
 export default function FilterBar({ filter, onChange }: Props) {
-  const hasFilter = filter.section !== null || filter.colorFamily !== null;
+  const hasFilter = filter.sections.length > 0 || filter.colorFamilies.length > 0;
 
   function toggleSection(s: FilamentSection) {
-    onChange({ ...filter, section: filter.section === s ? null : s });
+    const next = filter.sections.includes(s)
+      ? filter.sections.filter((x) => x !== s)
+      : [...filter.sections, s];
+    onChange({ ...filter, sections: next });
   }
 
   function toggleColor(id: string) {
-    onChange({ ...filter, colorFamily: filter.colorFamily === id ? null : id });
+    const next = filter.colorFamilies.includes(id)
+      ? filter.colorFamilies.filter((x) => x !== id)
+      : [...filter.colorFamilies, id];
+    onChange({ ...filter, colorFamilies: next });
   }
 
   function clearAll() {
-    onChange({ section: null, colorFamily: null });
+    onChange({ sections: [], colorFamilies: [] });
   }
 
   return (
@@ -46,7 +52,7 @@ export default function FilterBar({ filter, onChange }: Props) {
             key={s}
             onClick={() => toggleSection(s)}
             className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-              filter.section === s
+              filter.sections.includes(s)
                 ? SECTION_STYLE[s]
                 : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 hover:border-gray-500'
             }`}
@@ -73,7 +79,7 @@ export default function FilterBar({ filter, onChange }: Props) {
             key={fam.id}
             onClick={() => toggleColor(fam.id)}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-              filter.colorFamily === fam.id
+              filter.colorFamilies.includes(fam.id)
                 ? 'bg-white/10 text-white border-white/30'
                 : 'bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 hover:border-gray-500'
             }`}
