@@ -68,7 +68,7 @@ export default function Home() {
     const newColor: FilamentColor = {
       id: `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
       name, hex, category: section, type, brand,
-      count: 0, status: 'sealed', isCustom: true,
+      count: 1, status: 'sealed', isCustom: true,
     };
     persist([...inventory, newColor]);
   }
