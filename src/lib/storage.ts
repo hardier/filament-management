@@ -7,7 +7,7 @@ const INVENTORY_KEY = 'filament-inventory';
 const OLD_TO_SECTION: Record<string, FilamentSection> = {
   PLA: 'PLA', 'PLA Basic': 'PLA', 'PLA Matte': 'PLA', 'PLA Silk': 'PLA', 'PLA Sparkle': 'PLA', 'PLA Translucent': 'PLA',
   PETG: 'PETG', 'PETG Basic': 'PETG', 'PETG HF': 'PETG', 'PETG Translucent': 'PETG', 'PETG-CF': 'PETG',
-  ABS: 'Other', ASA: 'Other', 'TPU 95A': 'Other', Other: 'Other',
+  ABS: 'Other', 'ABS-GF': 'Other', ASA: 'Other', 'TPU 95A': 'Other', Other: 'Other',
 };
 
 const OLD_TO_TYPE: Record<string, FilamentType> = {
@@ -15,7 +15,7 @@ const OLD_TO_TYPE: Record<string, FilamentType> = {
   'PLA Silk': 'PLA Silk', 'PLA Sparkle': 'PLA Sparkle', 'PLA Translucent': 'PLA Translucent',
   PETG: 'PETG Basic', 'PETG Basic': 'PETG Basic', 'PETG HF': 'PETG HF',
   'PETG Translucent': 'PETG Translucent', 'PETG-CF': 'PETG-CF',
-  ABS: 'ABS', ASA: 'ASA', 'TPU 95A': 'TPU 95A', Other: 'Other',
+  ABS: 'ABS', 'ABS-GF': 'ABS-GF', ASA: 'ASA', 'TPU 95A': 'TPU 95A', Other: 'Other',
 };
 
 function migrate(raw: Record<string, unknown>): FilamentColor {
