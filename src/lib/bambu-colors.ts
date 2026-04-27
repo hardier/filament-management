@@ -128,6 +128,12 @@ const COLOR_DEFS: ColorDef[] = [
   { name: 'Royal Purple', hex: '#483d8b', category: 'PLA', type: 'PLA Sparkle' },
   { name: 'Alpine Green', hex: '#3f5443', category: 'PLA', type: 'PLA Sparkle' },
 
+  // ── PETG Luminous ─────────────────────────────────────────────
+  { name: 'Luminous Green',  hex: '#39ff14', category: 'PETG', type: 'PETG Luminous' },
+  { name: 'Luminous Blue',   hex: '#00b4ff', category: 'PETG', type: 'PETG Luminous' },
+  { name: 'Luminous Yellow', hex: '#fff01f', category: 'PETG', type: 'PETG Luminous' },
+  { name: 'Luminous Pink',   hex: '#ff6ec7', category: 'PETG', type: 'PETG Luminous' },
+
   // ── PETG Basic ────────────────────────────────────────────────
   { name: 'White',       hex: '#ffffff', category: 'PETG', type: 'PETG Basic' },
   { name: 'Yellow',      hex: '#fce300', category: 'PETG', type: 'PETG Basic' },

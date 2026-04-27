@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Pencil, Check, X, Minus, Plus } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Pencil, Check, X, Minus, Plus, Pipette } from 'lucide-react';
 import type { FilamentColor, FilamentStatus } from '@/lib/types';
 import { STATUS_CYCLE } from '@/lib/types';
 import { contrastColor } from '@/lib/color-utils';
@@ -54,6 +54,7 @@ function StatusIndicator({ status, editable, onCycle }: {
 export default function FilamentCard({ filament, editMode, onUpdate, onDelete }: Props) {
   const [editingBrand, setEditingBrand] = useState(false);
   const [brandDraft, setBrandDraft] = useState(filament.brand);
+  const colorInputRef = useRef<HTMLInputElement>(null);
   const hasImage = Boolean(filament.imageSrc);
   const textColor = hasImage ? '#ffffff' : contrastColor(filament.hex);
 
@@ -116,7 +117,6 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
             )}
           </div>
         ) : (
-          /* Inline brand editor overlaid on swatch */
           <div className="absolute bottom-0 inset-x-0 flex items-center gap-1 px-1.5 pb-1.5 pt-4"
             style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}
           >
@@ -133,14 +133,36 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
           </div>
         )}
 
-        {editMode && filament.isCustom && (
-          <button
-            onClick={onDelete}
-            className="absolute top-1 right-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
-            title="Remove color"
-          >
-            <X size={11} />
-          </button>
+        {/* Edit-mode overlay buttons */}
+        {editMode && (
+          <>
+            {/* Color picker trigger — top-left */}
+            <button
+              onClick={() => colorInputRef.current?.click()}
+              className="absolute top-1 left-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
+              title="Edit color"
+            >
+              <Pipette size={11} />
+            </button>
+            <input
+              ref={colorInputRef}
+              type="color"
+              value={filament.hex}
+              onChange={(e) => onUpdate({ ...filament, hex: e.target.value })}
+              className="sr-only"
+            />
+
+            {/* Delete — top-right (custom only) */}
+            {filament.isCustom && (
+              <button
+                onClick={onDelete}
+                className="absolute top-1 right-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
+                title="Remove color"
+              >
+                <X size={11} />
+              </button>
+            )}
+          </>
         )}
       </div>
 
@@ -184,6 +206,31 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
             <span className="text-[11px] text-gray-400 font-medium">Sealed</span>
           )}
         </div>
+
+        {/* Hex color row — edit mode only */}
+        {editMode && (
+          <div className="flex items-center gap-1.5 pt-0.5 border-t border-white/5">
+            <button
+              onClick={() => colorInputRef.current?.click()}
+              className="w-4 h-4 rounded-full flex-shrink-0 border border-white/20 hover:scale-110 transition-transform"
+              style={{ backgroundColor: filament.hex }}
+              title="Edit color"
+            />
+            <input
+              value={filament.hex}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onUpdate({ ...filament, hex: v });
+              }}
+              onBlur={(e) => {
+                if (!/^#[0-9a-fA-F]{6}$/.test(e.target.value)) onUpdate({ ...filament, hex: filament.hex });
+              }}
+              className="flex-1 bg-transparent text-gray-400 text-[10px] font-mono outline-none hover:text-gray-200 focus:text-white min-w-0"
+              style={{ fontSize: '12px' }}
+              maxLength={7}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
