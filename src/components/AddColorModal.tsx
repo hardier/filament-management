@@ -1,15 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import type { FilamentSection, FilamentType } from '@/lib/types';
+import { useState, useRef, useEffect } from 'react';
+import { X, ImagePlus, Trash2 } from 'lucide-react';
+import type { FilamentSection, FilamentType, FilamentColor } from '@/lib/types';
 import { SECTION_TYPES } from '@/lib/types';
 import { KNOWN_COLOR_NAMES } from '@/lib/bambu-colors';
 import { BRAND_NAMES, getBrandColors, type BrandColor } from '@/lib/brands';
 
 interface Props {
   section: FilamentSection;
-  onAdd: (name: string, hex: string, brand: string, type: FilamentType) => void;
+  onAdd: (color: Omit<FilamentColor, 'id' | 'count' | 'status'>) => void;
   onClose: () => void;
 }
 
@@ -29,14 +29,63 @@ const NAME_TO_HEX: Record<string, string> = {
   'Clear': '#E8F4F8', 'Natural': '#F5E6C8',
 };
 
+async function resizeToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(blob);
+    img.onload = () => {
+      const MAX = 400;
+      let w = img.naturalWidth, h = img.naturalHeight;
+      if (w > MAX || h > MAX) {
+        const r = Math.min(MAX / w, MAX / h);
+        w = Math.round(w * r);
+        h = Math.round(h * r);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('Image load failed')); };
+    img.src = url;
+  });
+}
+
 export default function AddColorModal({ section, onAdd, onClose }: Props) {
   const types = SECTION_TYPES[section];
   const [name, setName] = useState('');
   const [hex, setHex] = useState('#1DB954');
   const [brand, setBrand] = useState('Bambu Lab');
   const [type, setType] = useState<FilamentType>(types[0]);
+  const [imageSrc, setImageSrc] = useState<string | undefined>();
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const brandColors: BrandColor[] | undefined = getBrandColors(brand);
+
+  // Global paste listener — captures image from clipboard anywhere in the modal
+  useEffect(() => {
+    async function handlePaste(e: ClipboardEvent) {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          const blob = item.getAsFile();
+          if (blob) setImageSrc(await resizeToDataUrl(blob));
+          break;
+        }
+      }
+    }
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, []);
+
+  async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) setImageSrc(await resizeToDataUrl(file));
+    e.target.value = '';
+  }
 
   function handleNameChange(value: string) {
     setName(value);
@@ -51,7 +100,15 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) return;
-    onAdd(name.trim(), hex, brand.trim() || 'Bambu Lab', type);
+    onAdd({
+      name: name.trim(),
+      hex,
+      category: section,
+      type,
+      brand: brand.trim() || 'Bambu Lab',
+      isCustom: true,
+      ...(imageSrc ? { imageSrc } : {}),
+    });
     onClose();
   }
 
@@ -62,17 +119,21 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
       className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm border border-gray-700 pb-safe max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-center pt-3 sm:hidden sticky top-0 bg-gray-800">
+      <div className="bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm border border-gray-700 pb-safe max-h-[92vh] flex flex-col">
+        {/* Handle bar */}
+        <div className="flex justify-center pt-3 sm:hidden flex-shrink-0">
           <div className="w-10 h-1 rounded-full bg-gray-600" />
         </div>
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 sticky top-4 sm:top-0 bg-gray-800 z-10">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 flex-shrink-0">
           <h3 className="text-white font-semibold text-base">Add Color — {section}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white p-1"><X size={18} /></button>
         </div>
 
-        <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
+        {/* Scrollable body */}
+        <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4 overflow-y-auto">
+
           {/* Brand selector */}
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">Brand</label>
@@ -89,7 +150,7 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
             </datalist>
           </div>
 
-          {/* Brand color picker — shown when the selected brand has a catalog */}
+          {/* Brand color picker */}
           {brandColors && brandColors.length > 0 && (
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">
@@ -108,10 +169,7 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
                         : 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-400'
                     }`}
                   >
-                    <span
-                      className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20"
-                      style={{ backgroundColor: bc.hex }}
-                    />
+                    <span className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20" style={{ backgroundColor: bc.hex }} />
                     <span className="font-mono text-[10px] text-gray-400">{bc.code}</span>
                     <span>{bc.name}</span>
                   </button>
@@ -135,7 +193,7 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
             </select>
           </div>
 
-          {/* Color name with datalist */}
+          {/* Color name */}
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">Color Name</label>
             <input
@@ -154,7 +212,7 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
 
           {/* Color picker */}
           <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Color</label>
+            <label className="block text-xs text-gray-400 mb-1.5">Hex Color</label>
             <div className="flex items-center gap-3">
               <input
                 type="color"
@@ -172,12 +230,53 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
             </div>
           </div>
 
-          {/* Live preview */}
+          {/* Thumbnail image */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">
+              Thumbnail <span className="text-gray-600">(optional — upload or paste)</span>
+            </label>
+            {imageSrc ? (
+              <div className="relative rounded-lg overflow-hidden h-24 border border-white/10">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={imageSrc} alt="thumbnail" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => setImageSrc(undefined)}
+                  className="absolute top-1.5 right-1.5 p-1 rounded-full bg-black/50 hover:bg-black/75 text-white transition-colors"
+                  title="Remove image"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="w-full h-16 rounded-lg border-2 border-dashed border-gray-600 hover:border-gray-400 flex items-center justify-center gap-2 text-gray-500 hover:text-gray-300 transition-colors text-xs"
+              >
+                <ImagePlus size={16} />
+                Upload or paste an image
+              </button>
+            )}
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+          </div>
+
+          {/* Preview */}
           <div
-            className="h-10 rounded-lg flex items-center justify-center text-xs font-semibold shadow-inner"
-            style={{ backgroundColor: hex }}
+            className="h-12 rounded-lg flex items-center justify-center text-xs font-semibold shadow-inner overflow-hidden relative"
+            style={imageSrc
+              ? { backgroundImage: `url(${imageSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : { backgroundColor: hex }
+            }
           >
-            <span style={{ mixBlendMode: 'difference', color: 'white' }}>
+            {imageSrc && <div className="absolute inset-0 bg-black/30" />}
+            <span className="relative" style={{ mixBlendMode: imageSrc ? undefined : 'difference', color: 'white', textShadow: imageSrc ? '0 1px 3px rgba(0,0,0,0.8)' : undefined }}>
               {name || 'Preview'}
             </span>
           </div>

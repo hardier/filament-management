@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck } from 'lucide-react';
-import type { FilamentColor, FilamentSection, FilamentType, SortMode, SyncState } from '@/lib/types';
+import type { FilamentColor, FilamentSection, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
 import { fetchInventory, pushInventory } from '@/lib/api';
@@ -64,11 +64,12 @@ export default function Home() {
   function handleDelete(id: string) {
     persist(inventory.filter((f) => f.id !== id));
   }
-  function handleAdd(section: FilamentSection, name: string, hex: string, brand: string, type: FilamentType) {
+  function handleAdd(partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) {
     const newColor: FilamentColor = {
+      ...partial,
       id: `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      name, hex, category: section, type, brand,
-      count: 1, status: 'sealed', isCustom: true,
+      count: 1,
+      status: 'sealed',
     };
     persist([...inventory, newColor]);
   }
@@ -204,7 +205,7 @@ export default function Home() {
               sortMode={sortMode}
               onUpdate={handleUpdate}
               onDelete={handleDelete}
-              onAdd={(name, hex, brand, type) => handleAdd(sec, name, hex, brand, type)}
+              onAdd={handleAdd}
             />
           );
         })}

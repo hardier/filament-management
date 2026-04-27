@@ -15,7 +15,7 @@ interface Props {
   sortMode: SortMode;
   onUpdate: (id: string, updated: FilamentColor) => void;
   onDelete: (id: string) => void;
-  onAdd: (name: string, hex: string, brand: string, type: FilamentType) => void;
+  onAdd: (partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) => void;
 }
 
 const SECTION_STYLE: Record<FilamentSection, { bg: string; badge: string; type: string }> = {
@@ -121,7 +121,7 @@ export default function CategorySection({
       {showAddModal && (
         <AddColorModal
           section={section}
-          onAdd={(name, hex, brand, type) => onAdd(name, hex, brand, type)}
+          onAdd={onAdd}
           onClose={() => setShowAddModal(false)}
         />
       )}

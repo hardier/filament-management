@@ -1,14 +1,14 @@
 export type FilamentSection = 'PLA' | 'PETG' | 'Other';
 
 export type FilamentType =
-  | 'PLA Basic' | 'PLA Matte' | 'PLA Silk' | 'PLA Sparkle' | 'PLA Translucent'
+  | 'PLA Basic' | 'PLA Matte' | 'PLA Silk' | 'PLA Sparkle' | 'PLA Translucent' | 'PLA Luminous'
   | 'PETG Basic' | 'PETG Translucent' | 'PETG HF' | 'PETG-CF'
   | 'ABS' | 'ABS-GF' | 'ASA' | 'TPU 95A' | 'Other';
 
 export const ALL_SECTIONS: FilamentSection[] = ['PLA', 'PETG', 'Other'];
 
 export const SECTION_TYPES: Record<FilamentSection, FilamentType[]> = {
-  PLA:   ['PLA Basic', 'PLA Matte', 'PLA Translucent', 'PLA Silk', 'PLA Sparkle'],
+  PLA:   ['PLA Basic', 'PLA Matte', 'PLA Translucent', 'PLA Silk', 'PLA Sparkle', 'PLA Luminous'],
   PETG:  ['PETG Basic', 'PETG Translucent', 'PETG HF', 'PETG-CF'],
   Other: ['ABS', 'ABS-GF', 'ASA', 'TPU 95A', 'Other'],
 };
@@ -28,6 +28,8 @@ export interface FilamentColor {
   count: number;
   status: FilamentStatus;
   isCustom?: boolean;
+  /** Base64 data URL for a photo thumbnail (custom colors) */
+  imageSrc?: string;
 }
 
 export type SortMode = 'color' | 'availability';

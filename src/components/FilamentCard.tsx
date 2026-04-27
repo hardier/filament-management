@@ -54,7 +54,8 @@ function StatusIndicator({ status, editable, onCycle }: {
 export default function FilamentCard({ filament, editMode, onUpdate, onDelete }: Props) {
   const [editingBrand, setEditingBrand] = useState(false);
   const [brandDraft, setBrandDraft] = useState(filament.brand);
-  const textColor = contrastColor(filament.hex);
+  const hasImage = Boolean(filament.imageSrc);
+  const textColor = hasImage ? '#ffffff' : contrastColor(filament.hex);
 
   function commitBrand() {
     onUpdate({ ...filament, brand: brandDraft.trim() || filament.brand });
@@ -82,12 +83,16 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
       {/* Color swatch */}
       <div
         className="h-24 flex flex-col items-center justify-center relative"
-        style={{ backgroundColor: filament.hex }}
+        style={
+          hasImage
+            ? { backgroundImage: `url(${filament.imageSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+            : { backgroundColor: filament.hex }
+        }
       >
         {/* Color name */}
         <span
           className="text-xs font-bold px-2 text-center leading-tight"
-          style={{ color: textColor }}
+          style={{ color: textColor, textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.8)' : undefined }}
         >
           {filament.name}
         </span>

@@ -97,6 +97,14 @@ const COLOR_DEFS: ColorDef[] = [
   { name: 'Lavender',      hex: '#b8acd6', category: 'PLA', type: 'PLA Translucent' },
   { name: 'Purple',        hex: '#8344b0', category: 'PLA', type: 'PLA Translucent' },
 
+  // ── PLA Luminous ──────────────────────────────────────────────
+  { name: 'Luminous Green',  hex: '#39ff14', category: 'PLA', type: 'PLA Luminous' },
+  { name: 'Luminous Blue',   hex: '#00b4ff', category: 'PLA', type: 'PLA Luminous' },
+  { name: 'Luminous Yellow', hex: '#fff01f', category: 'PLA', type: 'PLA Luminous' },
+  { name: 'Luminous Pink',   hex: '#ff6ec7', category: 'PLA', type: 'PLA Luminous' },
+  { name: 'Luminous Purple', hex: '#bf5fff', category: 'PLA', type: 'PLA Luminous' },
+  { name: 'Luminous Orange', hex: '#ff9500', category: 'PLA', type: 'PLA Luminous' },
+
   // ── PLA Silk ──────────────────────────────────────────────────
   { name: 'White',       hex: '#ffffff', category: 'PLA', type: 'PLA Silk' },
   { name: 'Silver',      hex: '#c8c8c8', category: 'PLA', type: 'PLA Silk' },
