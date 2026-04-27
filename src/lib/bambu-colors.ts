@@ -12,7 +12,7 @@ export const KNOWN_COLOR_NAMES = [
   'Brown', 'Dark Brown',
   'Silver', 'Copper', 'Bronze', 'Rose Gold',
   'Light Grey', 'Grey', 'Dark Grey', 'Charcoal', 'Black',
-  'Transparent', 'Natural',
+  'Clear', 'Natural',
 ];
 
 interface ColorDef {

@@ -5,6 +5,7 @@ import { X } from 'lucide-react';
 import type { FilamentSection, FilamentType } from '@/lib/types';
 import { SECTION_TYPES } from '@/lib/types';
 import { KNOWN_COLOR_NAMES } from '@/lib/bambu-colors';
+import { BRAND_NAMES, getBrandColors, type BrandColor } from '@/lib/brands';
 
 interface Props {
   section: FilamentSection;
@@ -25,7 +26,7 @@ const NAME_TO_HEX: Record<string, string> = {
   'Brown': '#795548', 'Dark Brown': '#4E2A04',
   'Silver': '#C0C0C0', 'Light Grey': '#D3D3D3', 'Grey': '#808080', 'Dark Grey': '#555555',
   'Charcoal': '#36454F', 'Black': '#1A1A1A',
-  'Transparent': '#E8F4F8', 'Natural': '#F5E6C8',
+  'Clear': '#E8F4F8', 'Natural': '#F5E6C8',
 };
 
 export default function AddColorModal({ section, onAdd, onClose }: Props) {
@@ -35,9 +36,16 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
   const [brand, setBrand] = useState('Bambu Lab');
   const [type, setType] = useState<FilamentType>(types[0]);
 
+  const brandColors: BrandColor[] | undefined = getBrandColors(brand);
+
   function handleNameChange(value: string) {
     setName(value);
     if (NAME_TO_HEX[value]) setHex(NAME_TO_HEX[value]);
+  }
+
+  function handleBrandColorPick(bc: BrandColor) {
+    setName(bc.name);
+    setHex(bc.hex);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -54,17 +62,64 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
       className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm border border-gray-700 pb-safe">
-        <div className="flex justify-center pt-3 sm:hidden">
+      <div className="bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-sm border border-gray-700 pb-safe max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-center pt-3 sm:hidden sticky top-0 bg-gray-800">
           <div className="w-10 h-1 rounded-full bg-gray-600" />
         </div>
 
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-700 sticky top-4 sm:top-0 bg-gray-800 z-10">
           <h3 className="text-white font-semibold text-base">Add Color — {section}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-white p-1"><X size={18} /></button>
         </div>
 
         <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4">
+          {/* Brand selector */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">Brand</label>
+            <input
+              list="known-brands"
+              value={brand}
+              onChange={(e) => setBrand(e.target.value)}
+              placeholder="Bambu Lab"
+              className={inputCls}
+              style={{ fontSize: '16px' }}
+            />
+            <datalist id="known-brands">
+              {BRAND_NAMES.map((b) => <option key={b} value={b} />)}
+            </datalist>
+          </div>
+
+          {/* Brand color picker — shown when the selected brand has a catalog */}
+          {brandColors && brandColors.length > 0 && (
+            <div>
+              <label className="block text-xs text-gray-400 mb-1.5">
+                {brand} Colors <span className="text-gray-600">(tap to auto-fill)</span>
+              </label>
+              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+                {brandColors.map((bc) => (
+                  <button
+                    key={bc.code}
+                    type="button"
+                    onClick={() => handleBrandColorPick(bc)}
+                    title={`${bc.code} – ${bc.name}`}
+                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-colors ${
+                      name === bc.name
+                        ? 'border-white/40 bg-white/10 text-white'
+                        : 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    <span
+                      className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20"
+                      style={{ backgroundColor: bc.hex }}
+                    />
+                    <span className="font-mono text-[10px] text-gray-400">{bc.code}</span>
+                    <span>{bc.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Type selector */}
           <div>
             <label className="block text-xs text-gray-400 mb-1.5">Type</label>
@@ -125,18 +180,6 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
             <span style={{ mixBlendMode: 'difference', color: 'white' }}>
               {name || 'Preview'}
             </span>
-          </div>
-
-          {/* Brand */}
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Brand</label>
-            <input
-              value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              placeholder="Bambu Lab"
-              className={inputCls}
-              style={{ fontSize: '16px' }}
-            />
           </div>
 
           <div className="flex gap-2 pt-1">
