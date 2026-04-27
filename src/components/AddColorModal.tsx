@@ -58,11 +58,14 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
   const [name, setName] = useState('');
   const [hex, setHex] = useState('#1DB954');
   const [brand, setBrand] = useState('Bambu Lab');
+  const [customBrand, setCustomBrand] = useState('');
+  const isOtherBrand = brand === '__other__';
+  const effectiveBrand = isOtherBrand ? customBrand : brand;
   const [type, setType] = useState<FilamentType>(types[0]);
   const [imageSrc, setImageSrc] = useState<string | undefined>();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const brandColors: BrandColor[] | undefined = getBrandColors(brand);
+  const brandColors: BrandColor[] | undefined = getBrandColors(effectiveBrand);
 
   // Global paste listener — captures image from clipboard anywhere in the modal
   useEffect(() => {
@@ -105,7 +108,7 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
       hex,
       category: section,
       type,
-      brand: brand.trim() || 'Bambu Lab',
+      brand: effectiveBrand.trim() || 'Bambu Lab',
       isCustom: true,
       ...(imageSrc ? { imageSrc } : {}),
     });
@@ -135,31 +138,39 @@ export default function AddColorModal({ section, onAdd, onClose }: Props) {
         <form onSubmit={handleSubmit} className="px-5 py-4 flex flex-col gap-4 overflow-y-auto">
 
           {/* Brand selector */}
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Brand</label>
-            <input
-              list="known-brands"
+          <div className="flex flex-col gap-2">
+            <label className="block text-xs text-gray-400">Brand</label>
+            <select
               value={brand}
-              onChange={(e) => setBrand(e.target.value)}
-              placeholder="Bambu Lab"
+              onChange={(e) => { setBrand(e.target.value); setCustomBrand(''); }}
               className={inputCls}
               style={{ fontSize: '16px' }}
-            />
-            <datalist id="known-brands">
-              {BRAND_NAMES.map((b) => <option key={b} value={b} />)}
-            </datalist>
+            >
+              {BRAND_NAMES.map((b) => <option key={b} value={b}>{b}</option>)}
+              <option value="__other__">Other…</option>
+            </select>
+            {isOtherBrand && (
+              <input
+                autoFocus
+                value={customBrand}
+                onChange={(e) => setCustomBrand(e.target.value)}
+                placeholder="Enter brand name"
+                className={inputCls}
+                style={{ fontSize: '16px' }}
+              />
+            )}
           </div>
 
           {/* Brand color picker */}
           {brandColors && brandColors.length > 0 && (
             <div>
               <label className="block text-xs text-gray-400 mb-1.5">
-                {brand} Colors <span className="text-gray-600">(tap to auto-fill)</span>
+                {effectiveBrand} Colors <span className="text-gray-600">(tap to auto-fill)</span>
               </label>
               <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
                 {brandColors.map((bc) => (
                   <button
-                    key={bc.code}
+                    key={bc.code ?? bc.name}
                     type="button"
                     onClick={() => handleBrandColorPick(bc)}
                     title={`${bc.code} – ${bc.name}`}
