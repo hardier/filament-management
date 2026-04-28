@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextRequest, NextResponse } from 'next/server';
 
 const PROMPT = `You are analyzing a purchase history screenshot from an e-commerce platform (may be in Chinese, English, or mixed).
@@ -17,8 +17,8 @@ Return ONLY a JSON object, no other text:
 {"items":[{"brand":"","name":"","code":"","material":"","subtype":"","hex":"","count":1,"thumbnailBox":{"x":0,"y":0,"w":0,"h":0}}]}`;
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json({ error: 'ANTHROPIC_API_KEY not configured' }, { status: 503 });
+  if (!process.env.GEMINI_API_KEY) {
+    return NextResponse.json({ error: 'GEMINI_API_KEY not configured' }, { status: 503 });
   }
 
   const body = await req.json().catch(() => null);
@@ -26,24 +26,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing imageBase64 or mimeType' }, { status: 400 });
   }
 
-  const client = new Anthropic();
+  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
-  const msg = await client.messages.create({
-    model: 'claude-opus-4-7',
-    max_tokens: 2048,
-    messages: [{
-      role: 'user',
-      content: [
-        {
-          type: 'image',
-          source: { type: 'base64', media_type: body.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp', data: body.imageBase64 },
-        },
-        { type: 'text', text: PROMPT },
-      ],
-    }],
-  });
+  const result = await model.generateContent([
+    { inlineData: { mimeType: body.mimeType, data: body.imageBase64 } },
+    PROMPT,
+  ]);
 
-  const raw = msg.content[0].type === 'text' ? msg.content[0].text : '';
+  const raw = result.response.text();
   const match = raw.match(/\{[\s\S]*\}/);
   if (!match) {
     return NextResponse.json({ error: 'No JSON in model response', raw }, { status: 422 });
