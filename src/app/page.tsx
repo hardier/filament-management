@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck } from 'lucide-react';
+import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck, Undo2, X } from 'lucide-react';
 import type { FilamentColor, FilamentSection, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
@@ -20,7 +20,9 @@ export default function Home() {
   const [filter, setFilter] = useState<FilterState>({ sections: [], colorFamilies: [] });
   const [showAvailableOnly, setShowAvailableOnly] = useState(true);
   const [mounted, setMounted] = useState(false);
+  const [deletedItem, setDeletedItem] = useState<FilamentColor | null>(null);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const local = getLocalInventory();
@@ -62,7 +64,20 @@ export default function Home() {
     persist(inventory.map((f) => (f.id === id ? updated : f)));
   }
   function handleDelete(id: string) {
+    const deleted = inventory.find((f) => f.id === id);
     persist(inventory.filter((f) => f.id !== id));
+    if (deleted) {
+      if (undoTimer.current) clearTimeout(undoTimer.current);
+      setDeletedItem(deleted);
+      undoTimer.current = setTimeout(() => setDeletedItem(null), 5000);
+    }
+  }
+
+  function handleUndo() {
+    if (!deletedItem) return;
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    persist([...inventory, deletedItem]);
+    setDeletedItem(null);
   }
   function handleAdd(partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) {
     const newColor: FilamentColor = {
@@ -183,6 +198,34 @@ export default function Home() {
           <FilterBar filter={filter} onChange={setFilter} />
         </div>
       </header>
+
+      {/* Undo toast */}
+      {deletedItem && (
+        <div className="fixed bottom-6 left-0 right-0 flex justify-center z-50 pointer-events-none px-4">
+          <div className="flex items-center gap-3 bg-gray-700 border border-gray-600 rounded-2xl px-4 py-3 shadow-2xl pointer-events-auto">
+            <div
+              className="w-5 h-5 rounded-full flex-shrink-0 border border-white/20"
+              style={{ backgroundColor: deletedItem.hex }}
+            />
+            <span className="text-sm text-gray-200">
+              Removed <span className="font-semibold text-white">{deletedItem.name}</span>
+            </span>
+            <button
+              onClick={handleUndo}
+              className="flex items-center gap-1 text-blue-400 hover:text-blue-300 text-sm font-semibold transition-colors ml-1"
+            >
+              <Undo2 size={14} />
+              Undo
+            </button>
+            <button
+              onClick={() => { if (undoTimer.current) clearTimeout(undoTimer.current); setDeletedItem(null); }}
+              className="text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
         {editMode && (

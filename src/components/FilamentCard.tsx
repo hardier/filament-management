@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Pencil, Check, X, Minus, Plus, Pipette } from 'lucide-react';
+import { Pencil, Check, X, Minus, Plus } from 'lucide-react';
 import type { FilamentColor, FilamentStatus } from '@/lib/types';
 import { STATUS_CYCLE } from '@/lib/types';
 import { contrastColor } from '@/lib/color-utils';
+import AddColorModal from './AddColorModal';
 
 interface Props {
   filament: FilamentColor;
@@ -52,21 +53,10 @@ function StatusIndicator({ status, editable, onCycle }: {
 }
 
 export default function FilamentCard({ filament, editMode, onUpdate, onDelete }: Props) {
-  const [editingBrand, setEditingBrand] = useState(false);
-  const [brandDraft, setBrandDraft] = useState(filament.brand);
+  const [showEditModal, setShowEditModal] = useState(false);
   const colorInputRef = useRef<HTMLInputElement>(null);
   const hasImage = Boolean(filament.imageSrc);
   const textColor = hasImage ? '#ffffff' : contrastColor(filament.hex);
-
-  function commitBrand() {
-    onUpdate({ ...filament, brand: brandDraft.trim() || filament.brand });
-    setEditingBrand(false);
-  }
-
-  function cancelBrand() {
-    setBrandDraft(filament.brand);
-    setEditingBrand(false);
-  }
 
   function adjust(delta: number) {
     const next = Math.max(0, filament.count + delta);
@@ -80,158 +70,146 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
   }
 
   return (
-    <div className="rounded-xl overflow-hidden shadow-md border border-white/10 flex flex-col">
-      {/* Color swatch */}
-      <div
-        className="h-24 flex flex-col items-center justify-center relative"
-        style={
-          hasImage
-            ? { backgroundImage: `url(${filament.imageSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
-            : { backgroundColor: filament.hex }
-        }
-      >
-        {/* Color name */}
-        <span
-          className="text-xs font-bold px-2 text-center leading-tight"
-          style={{ color: textColor, textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.8)' : undefined }}
+    <>
+      <div className="rounded-xl overflow-hidden shadow-md border border-white/10 flex flex-col">
+        {/* Color swatch */}
+        <div
+          className="h-24 flex flex-col items-center justify-center relative"
+          style={
+            hasImage
+              ? { backgroundImage: `url(${filament.imageSrc})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+              : { backgroundColor: filament.hex }
+          }
         >
-          {filament.name}
-        </span>
+          {/* Color name */}
+          <span
+            className="text-xs font-bold px-2 text-center leading-tight"
+            style={{ color: textColor, textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.8)' : undefined }}
+          >
+            {filament.name}
+          </span>
 
-        {/* Brand badge — always visible at bottom of swatch */}
-        {!editMode || !editingBrand ? (
+          {/* Brand badge */}
           <div
-            className="absolute bottom-0 inset-x-0 flex items-center justify-between px-2 py-1"
+            className="absolute bottom-0 inset-x-0 flex items-center px-2 py-1"
             style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)' }}
           >
-            <span className="text-[11px] font-semibold text-white/90 truncate flex-1 leading-none">
+            <span className="text-[11px] font-semibold text-white/90 truncate leading-none">
               {filament.brand}
             </span>
-            {editMode && (
+          </div>
+
+          {/* Edit-mode overlay buttons */}
+          {editMode && (
+            <>
+              {/* Edit all fields — top-left */}
               <button
-                onClick={() => setEditingBrand(true)}
-                className="flex-shrink-0 ml-1 text-white/60 hover:text-white transition-colors"
+                onClick={() => setShowEditModal(true)}
+                className="absolute top-1 left-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
+                title="Edit details"
               >
-                <Pencil size={10} />
+                <Pencil size={11} />
               </button>
+
+              {/* Quick color picker — hidden input triggered by hex row below */}
+              <input
+                ref={colorInputRef}
+                type="color"
+                value={filament.hex}
+                onChange={(e) => onUpdate({ ...filament, hex: e.target.value })}
+                className="sr-only"
+              />
+
+              {/* Delete — top-right (custom only) */}
+              {filament.isCustom && (
+                <button
+                  onClick={onDelete}
+                  className="absolute top-1 right-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
+                  title="Remove color"
+                >
+                  <X size={11} />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Info */}
+        <div className="bg-gray-800 px-2.5 py-2 flex flex-col gap-1.5 flex-1">
+          {/* Count */}
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-gray-400 font-medium">Spools</span>
+            {editMode ? (
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => adjust(-1)}
+                  disabled={filament.count === 0}
+                  className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center text-white transition-colors"
+                >
+                  <Minus size={12} />
+                </button>
+                <span className="text-white font-bold text-sm w-6 text-center">{filament.count}</span>
+                <button
+                  onClick={() => adjust(1)}
+                  className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition-colors"
+                >
+                  <Plus size={12} />
+                </button>
+              </div>
+            ) : (
+              <span className={`font-bold text-sm ${filament.count === 0 ? 'text-gray-600' : 'text-white'}`}>
+                {filament.count}
+              </span>
             )}
           </div>
-        ) : (
-          <div className="absolute bottom-0 inset-x-0 flex items-center gap-1 px-1.5 pb-1.5 pt-4"
-            style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, transparent 100%)' }}
-          >
-            <input
-              autoFocus
-              value={brandDraft}
-              onChange={(e) => setBrandDraft(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') commitBrand(); if (e.key === 'Escape') cancelBrand(); }}
-              className="flex-1 bg-black/40 text-white text-xs rounded px-1.5 py-0.5 outline-none border border-white/40 min-w-0"
-              style={{ fontSize: '16px' }}
-            />
-            <button onClick={commitBrand} className="text-green-300 hover:text-green-200 p-0.5"><Check size={12} /></button>
-            <button onClick={cancelBrand} className="text-red-300 hover:text-red-200 p-0.5"><X size={12} /></button>
-          </div>
-        )}
 
-        {/* Edit-mode overlay buttons */}
-        {editMode && (
-          <>
-            {/* Color picker trigger — top-left */}
-            <button
-              onClick={() => colorInputRef.current?.click()}
-              className="absolute top-1 left-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
-              title="Edit color"
-            >
-              <Pipette size={11} />
-            </button>
-            <input
-              ref={colorInputRef}
-              type="color"
-              value={filament.hex}
-              onChange={(e) => onUpdate({ ...filament, hex: e.target.value })}
-              className="sr-only"
+          {/* Status */}
+          <div className="flex items-center min-h-[20px]">
+            <StatusIndicator
+              status={filament.status ?? 'sealed'}
+              editable={editMode}
+              onCycle={cycleStatus}
             />
-
-            {/* Delete — top-right (custom only) */}
-            {filament.isCustom && (
-              <button
-                onClick={onDelete}
-                className="absolute top-1 right-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
-                title="Remove color"
-              >
-                <X size={11} />
-              </button>
+            {!editMode && filament.status === 'sealed' && (
+              <span className="text-[11px] text-gray-400 font-medium">Sealed</span>
             )}
-          </>
-        )}
-      </div>
+          </div>
 
-      {/* Info */}
-      <div className="bg-gray-800 px-2.5 py-2 flex flex-col gap-1.5 flex-1">
-        {/* Count */}
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] text-gray-400 font-medium">Spools</span>
-          {editMode ? (
-            <div className="flex items-center gap-1">
+          {/* Hex color row — edit mode only */}
+          {editMode && (
+            <div className="flex items-center gap-1.5 pt-0.5 border-t border-white/5">
               <button
-                onClick={() => adjust(-1)}
-                disabled={filament.count === 0}
-                className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 disabled:opacity-30 flex items-center justify-center text-white transition-colors"
-              >
-                <Minus size={12} />
-              </button>
-              <span className="text-white font-bold text-sm w-6 text-center">{filament.count}</span>
-              <button
-                onClick={() => adjust(1)}
-                className="w-7 h-7 rounded bg-gray-700 hover:bg-gray-600 flex items-center justify-center text-white transition-colors"
-              >
-                <Plus size={12} />
-              </button>
+                onClick={() => colorInputRef.current?.click()}
+                className="w-4 h-4 rounded-full flex-shrink-0 border border-white/20 hover:scale-110 transition-transform"
+                style={{ backgroundColor: filament.hex }}
+                title="Quick color pick"
+              />
+              <input
+                value={filament.hex}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onUpdate({ ...filament, hex: v });
+                }}
+                onBlur={(e) => {
+                  if (!/^#[0-9a-fA-F]{6}$/.test(e.target.value)) onUpdate({ ...filament, hex: filament.hex });
+                }}
+                className="flex-1 bg-transparent text-gray-400 text-[10px] font-mono outline-none hover:text-gray-200 focus:text-white min-w-0"
+                style={{ fontSize: '12px' }}
+                maxLength={7}
+              />
+              <Check size={10} className="text-gray-600 flex-shrink-0" />
             </div>
-          ) : (
-            <span className={`font-bold text-sm ${filament.count === 0 ? 'text-gray-600' : 'text-white'}`}>
-              {filament.count}
-            </span>
           )}
         </div>
-
-        {/* Status */}
-        <div className="flex items-center min-h-[20px]">
-          <StatusIndicator
-            status={filament.status ?? 'sealed'}
-            editable={editMode}
-            onCycle={cycleStatus}
-          />
-          {!editMode && filament.status === 'sealed' && (
-            <span className="text-[11px] text-gray-400 font-medium">Sealed</span>
-          )}
-        </div>
-
-        {/* Hex color row — edit mode only */}
-        {editMode && (
-          <div className="flex items-center gap-1.5 pt-0.5 border-t border-white/5">
-            <button
-              onClick={() => colorInputRef.current?.click()}
-              className="w-4 h-4 rounded-full flex-shrink-0 border border-white/20 hover:scale-110 transition-transform"
-              style={{ backgroundColor: filament.hex }}
-              title="Edit color"
-            />
-            <input
-              value={filament.hex}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (/^#[0-9a-fA-F]{0,6}$/.test(v)) onUpdate({ ...filament, hex: v });
-              }}
-              onBlur={(e) => {
-                if (!/^#[0-9a-fA-F]{6}$/.test(e.target.value)) onUpdate({ ...filament, hex: filament.hex });
-              }}
-              className="flex-1 bg-transparent text-gray-400 text-[10px] font-mono outline-none hover:text-gray-200 focus:text-white min-w-0"
-              style={{ fontSize: '12px' }}
-              maxLength={7}
-            />
-          </div>
-        )}
       </div>
-    </div>
+
+      {showEditModal && (
+        <AddColorModal
+          filament={filament}
+          onSave={(updated) => { onUpdate(updated); setShowEditModal(false); }}
+          onClose={() => setShowEditModal(false)}
+        />
+      )}
+    </>
   );
 }
