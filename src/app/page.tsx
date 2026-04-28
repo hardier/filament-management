@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck, Undo2, X, Archive } from 'lucide-react';
+import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck, Undo2, X, Archive, PackagePlus } from 'lucide-react';
 import type { FilamentColor, FilamentSection, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
@@ -9,6 +9,7 @@ import { fetchInventory, pushInventory } from '@/lib/api';
 import { matchesColorFamily } from '@/lib/color-filter';
 import CategorySection from '@/components/CategorySection';
 import FilterBar, { type FilterState } from '@/components/FilterBar';
+import IncomingPanel from '@/components/IncomingPanel';
 
 const PUSH_DEBOUNCE_MS = 1200;
 
@@ -20,6 +21,7 @@ export default function Home() {
   const [filter, setFilter] = useState<FilterState>({ sections: [], colorFamilies: [] });
   const [showAvailableOnly, setShowAvailableOnly] = useState(true);
   const [showUsed, setShowUsed] = useState(false);
+  const [tab, setTab] = useState<'inventory' | 'incoming'>('inventory');
   const [mounted, setMounted] = useState(false);
   const [deletedItem, setDeletedItem] = useState<FilamentColor | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -97,15 +99,33 @@ export default function Home() {
     persist([...inventory, newColor]);
   }
 
-  const totalSpools = inventory.reduce((s, f) => s + f.count, 0);
-  const totalUsed = inventory.reduce((s, f) => s + (f.usedCount ?? 0), 0);
-  const inStock = inventory.filter((f) => f.count > 0).length;
-  const inUse = inventory.filter((f) => f.status && f.status !== 'sealed').length;
+  function handleAddIncoming(partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) {
+    const newColor: FilamentColor = {
+      ...partial,
+      id: `incoming-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      count: 1,
+      status: 'sealed',
+      isCustom: true,
+      incoming: true,
+    };
+    persist([...inventory, newColor]);
+  }
+
+  function handleReceive(id: string) {
+    persist(inventory.map((f) => f.id === id ? { ...f, incoming: false } : f));
+  }
+
+  const incomingItems = inventory.filter((f) => f.incoming);
+  const stockItems = inventory.filter((f) => !f.incoming);
+  const totalSpools = stockItems.reduce((s, f) => s + f.count, 0);
+  const totalUsed = stockItems.reduce((s, f) => s + (f.usedCount ?? 0), 0);
+  const inStock = stockItems.filter((f) => f.count > 0).length;
+  const inUse = stockItems.filter((f) => f.status && f.status !== 'sealed').length;
 
   const visibleSections = filter.sections.length > 0 ? filter.sections : ALL_SECTIONS;
 
   function sectionFilaments(section: FilamentSection): FilamentColor[] {
-    let items = inventory.filter((f) => f.category === section);
+    let items = stockItems.filter((f) => f.category === section);
     if (showUsed) {
       items = items.filter((f) => (f.usedCount ?? 0) > 0);
     } else {
@@ -220,9 +240,41 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Filter bar */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3">
-          <FilterBar filter={filter} onChange={setFilter} />
+        {/* Filter bar + tab switcher */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3 flex items-center gap-3">
+          <div className="flex-1">
+            <FilterBar filter={filter} onChange={setFilter} />
+          </div>
+          <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5 border border-gray-700 flex-shrink-0">
+            <button
+              onClick={() => setTab('inventory')}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                tab === 'inventory'
+                  ? 'bg-gray-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Inventory
+            </button>
+            <button
+              onClick={() => setTab('incoming')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                tab === 'incoming'
+                  ? 'bg-gray-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <PackagePlus size={12} />
+              Incoming
+              {incomingItems.length > 0 && (
+                <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  tab === 'incoming' ? 'bg-indigo-500 text-white' : 'bg-indigo-500/30 text-indigo-300'
+                }`}>
+                  {incomingItems.length}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -255,41 +307,53 @@ export default function Home() {
       )}
 
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 flex flex-col gap-4 sm:gap-6">
-        {editMode && (
+        {editMode && tab === 'inventory' && (
           <div className="rounded-xl bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-xs sm:text-sm text-amber-300 flex items-center gap-2">
             <Pencil size={13} />
             Edit mode — adjust counts, brands, status, or add custom colors. Changes sync automatically.
           </div>
         )}
 
-        {visibleSections.map((sec) => {
-          const items = sectionFilaments(sec);
-          // Hide empty sections when any filter is active and nothing matches
-          if ((filter.colorFamilies.length > 0 || showAvailableOnly || showUsed) && items.length === 0) return null;
-          return (
-            <CategorySection
-              key={sec}
-              section={sec}
-              filaments={items}
-              editMode={editMode}
-              showUsed={showUsed}
-              sortMode={sortMode}
-              onUpdate={handleUpdate}
-              onDelete={handleDelete}
-              onAdd={handleAdd}
-            />
-          );
-        })}
+        {tab === 'incoming' ? (
+          <IncomingPanel
+            items={incomingItems}
+            editMode={editMode}
+            onReceive={handleReceive}
+            onUpdate={handleUpdate}
+            onDelete={handleDelete}
+            onAdd={handleAddIncoming}
+          />
+        ) : (
+          <>
+            {visibleSections.map((sec) => {
+              const items = sectionFilaments(sec);
+              if ((filter.colorFamilies.length > 0 || showAvailableOnly || showUsed) && items.length === 0) return null;
+              return (
+                <CategorySection
+                  key={sec}
+                  section={sec}
+                  filaments={items}
+                  editMode={editMode}
+                  showUsed={showUsed}
+                  sortMode={sortMode}
+                  onUpdate={handleUpdate}
+                  onDelete={handleDelete}
+                  onAdd={handleAdd}
+                />
+              );
+            })}
 
-        {/* Subtle danger zone — not prominent */}
-        <div className="flex justify-center pt-4 pb-2">
-          <button
-            onClick={() => setShowResetConfirm(true)}
-            className="text-[11px] text-gray-700 hover:text-gray-500 transition-colors"
-          >
-            Reset all inventory counts
-          </button>
-        </div>
+            {/* Subtle danger zone */}
+            <div className="flex justify-center pt-4 pb-2">
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="text-[11px] text-gray-700 hover:text-gray-500 transition-colors"
+              >
+                Reset all inventory counts
+              </button>
+            </div>
+          </>
+        )}
       </main>
 
       {/* Reset confirmation dialog */}

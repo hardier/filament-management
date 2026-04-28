@@ -1,3 +1,5 @@
+import { BAMBU_BRAND_COLORS } from './bambu-colors';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface BrandColor {
@@ -149,6 +151,7 @@ const CAILAB_COLORS: BrandColor[] = [
 ];
 
 const STATIC_CATALOG: BrandCatalog = {
+  'Bambu Lab': BAMBU_BRAND_COLORS,
   'Polymaker': POLYMAKER_COLORS,
   'Sunlu':     SUNLU_COLORS,
   'eSUN':      ESUN_COLORS,

@@ -253,27 +253,39 @@ export default function AddColorModal(props: Props) {
           {/* Brand color picker */}
           {brandColors && brandColors.length > 0 && (
             <div>
-              <label className="block text-xs text-gray-400 mb-1.5">
-                {effectiveBrand} Colors <span className="text-gray-600">(tap to auto-fill)</span>
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs text-gray-400">
+                  {effectiveBrand} Colors <span className="text-gray-600">(tap to pick)</span>
+                </label>
+                {name && brandColors.some((bc) => bc.name === name) && (
+                  <span className="flex items-center gap-1 text-xs text-white font-medium">
+                    <span className="w-3 h-3 rounded-full border border-white/30 flex-shrink-0" style={{ backgroundColor: hex }} />
+                    {name}
+                    {code && <span className="font-mono text-[10px] text-gray-400">{code}</span>}
+                  </span>
+                )}
+              </div>
               <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
-                {brandColors.map((bc) => (
-                  <button
-                    key={bc.code ?? bc.name}
-                    type="button"
-                    onClick={() => handleBrandColorPick(bc)}
-                    title={`${bc.code ?? ''} – ${bc.name}`}
-                    className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-colors ${
-                      name === bc.name
-                        ? 'border-white/40 bg-white/10 text-white'
-                        : 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-400'
-                    }`}
-                  >
-                    <span className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20" style={{ backgroundColor: bc.hex }} />
-                    {bc.code && <span className="font-mono text-[10px] text-gray-400">{bc.code}</span>}
-                    <span>{bc.name}</span>
-                  </button>
-                ))}
+                {brandColors.map((bc) => {
+                  const selected = name === bc.name;
+                  return (
+                    <button
+                      key={bc.code ?? bc.name}
+                      type="button"
+                      onClick={() => handleBrandColorPick(bc)}
+                      title={`${bc.code ? bc.code + ' – ' : ''}${bc.name}`}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-colors ${
+                        selected
+                          ? 'border-blue-400 bg-blue-500/20 text-white ring-1 ring-blue-400'
+                          : 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-400'
+                      }`}
+                    >
+                      <span className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20" style={{ backgroundColor: bc.hex }} />
+                      {bc.code && <span className="font-mono text-[10px] text-gray-400">{bc.code}</span>}
+                      <span>{bc.name}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}

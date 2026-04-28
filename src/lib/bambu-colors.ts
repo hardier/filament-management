@@ -224,6 +224,9 @@ const COLOR_DEFS: ColorDef[] = [
   { name: 'HIPS',        hex: '#eeddb8', category: 'Other', type: 'Other' },
 ];
 
+/** Bambu Lab colors as BrandColor entries for the AddColorModal picker */
+export const BAMBU_BRAND_COLORS = COLOR_DEFS.map((d) => ({ name: d.name, hex: d.hex }));
+
 export function getDefaultFilaments(): FilamentColor[] {
   return COLOR_DEFS.map((def, i) => ({
     id: `default-${i}`,
