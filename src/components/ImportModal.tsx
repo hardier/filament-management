@@ -85,18 +85,35 @@ async function cropThumbnail(
   });
 }
 
+const MAX_DIM = 1600;
+
 async function fileToBase64(file: File): Promise<{ base64: string; mimeType: string; dataUrl: string }> {
-  return new Promise((resolve, reject) => {
+  const dataUrl: string = await new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      const [header, base64] = dataUrl.split(',');
-      const mimeType = header.match(/:(.*?);/)?.[1] ?? 'image/png';
-      resolve({ base64, mimeType, dataUrl });
-    };
+    reader.onload = () => resolve(reader.result as string);
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
+
+  // Resize if too large to avoid hitting Vercel's 4.5 MB body limit
+  const resized: string = await new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const { naturalWidth: w, naturalHeight: h } = img;
+      if (w <= MAX_DIM && h <= MAX_DIM) { resolve(dataUrl); return; }
+      const scale = MAX_DIM / Math.max(w, h);
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(w * scale);
+      canvas.height = Math.round(h * scale);
+      canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL('image/jpeg', 0.88));
+    };
+    img.src = dataUrl;
+  });
+
+  const [header, base64] = resized.split(',');
+  const mimeType = header.match(/:(.*?);/)?.[1] ?? 'image/jpeg';
+  return { base64, mimeType, dataUrl };
 }
 
 // ─── main component ─────────────────────────────────────────────────────────
@@ -167,8 +184,14 @@ export default function ImportModal({ onAdd, onClose }: Props) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ imageBase64, mimeType: imageMime }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Parse failed');
+      const text = await res.text();
+      let data: Record<string, unknown>;
+      try {
+        data = JSON.parse(text);
+      } catch {
+        throw new Error(`Server error (${res.status}): ${text.slice(0, 200) || 'empty response'}`);
+      }
+      if (!res.ok) throw new Error((data.error as string) ?? 'Parse failed');
 
       const rawItems: Array<{
         brand: string; name: string; code: string;

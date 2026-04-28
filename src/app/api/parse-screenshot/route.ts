@@ -26,24 +26,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing imageBase64 or mimeType' }, { status: 400 });
   }
 
-  const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
-
-  const result = await model.generateContent([
-    { inlineData: { mimeType: body.mimeType, data: body.imageBase64 } },
-    PROMPT,
-  ]);
-
-  const raw = result.response.text();
-  const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) {
-    return NextResponse.json({ error: 'No JSON in model response', raw }, { status: 422 });
-  }
-
   try {
-    const data = JSON.parse(match[0]);
-    return NextResponse.json(data);
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON from model', raw }, { status: 422 });
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+
+    const result = await model.generateContent([
+      { inlineData: { mimeType: body.mimeType, data: body.imageBase64 } },
+      PROMPT,
+    ]);
+
+    const raw = result.response.text();
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) {
+      return NextResponse.json({ error: 'No JSON in model response', raw }, { status: 422 });
+    }
+
+    try {
+      const data = JSON.parse(match[0]);
+      return NextResponse.json(data);
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON from model', raw }, { status: 422 });
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: `Gemini error: ${message}` }, { status: 500 });
   }
 }
