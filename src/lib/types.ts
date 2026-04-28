@@ -29,6 +29,8 @@ export interface FilamentColor {
   brand: string;
   count: number;
   status: FilamentStatus;
+  /** Total spools consumed (marked as fully used) */
+  usedCount?: number;
   isCustom?: boolean;
   /** Base64 data URL for a photo thumbnail (custom colors) */
   imageSrc?: string;

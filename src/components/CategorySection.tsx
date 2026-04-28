@@ -12,6 +12,7 @@ interface Props {
   section: FilamentSection;
   filaments: FilamentColor[];
   editMode: boolean;
+  showUsed: boolean;
   sortMode: SortMode;
   onUpdate: (id: string, updated: FilamentColor) => void;
   onDelete: (id: string) => void;
@@ -24,20 +25,22 @@ const SECTION_STYLE: Record<FilamentSection, { bg: string; badge: string; type: 
   Other: { bg: 'from-purple-600/20 to-purple-500/10 border-purple-500/30', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30', type: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
 };
 
-function sortFilaments(filaments: FilamentColor[], sortMode: SortMode) {
+function sortFilaments(filaments: FilamentColor[], sortMode: SortMode, showUsed: boolean) {
+  if (showUsed) return [...filaments].sort((a, b) => (b.usedCount ?? 0) - (a.usedCount ?? 0) || a.name.localeCompare(b.name));
   return sortMode === 'color'
     ? sortByColor(filaments)
     : [...filaments].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
 }
 
 export default function CategorySection({
-  section, filaments, editMode, sortMode, onUpdate, onDelete, onAdd,
+  section, filaments, editMode, showUsed, sortMode, onUpdate, onDelete, onAdd,
 }: Props) {
   const [collapsed, setCollapsed] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const style = SECTION_STYLE[section];
 
   const total = filaments.reduce((s, f) => s + f.count, 0);
+  const totalUsed = filaments.reduce((s, f) => s + (f.usedCount ?? 0), 0);
   const inStock = filaments.filter((f) => f.count > 0).length;
   const inUse = filaments.filter((f) => f.status !== 'sealed').length;
 
@@ -68,7 +71,9 @@ export default function CategorySection({
         <h2 className="text-white text-lg sm:text-xl font-bold flex-1">{section}</h2>
         <div className="flex items-center gap-1.5">
           <span className={`text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full border ${style.badge}`}>
-            {inStock}/{filaments.length} · {total} spools
+            {showUsed
+              ? `${filaments.length} colors · ${totalUsed} used`
+              : `${inStock}/${filaments.length} · ${total} spools`}
           </span>
           {inUse > 0 && (
             <span className="text-[10px] sm:text-xs font-medium px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30">
@@ -94,11 +99,12 @@ export default function CategorySection({
               </div>
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2 sm:gap-3">
-                {sortFilaments(items, sortMode).map((f) => (
+                {sortFilaments(items, sortMode, showUsed).map((f) => (
                   <FilamentCard
                     key={f.id}
                     filament={f}
                     editMode={editMode}
+                    showUsed={showUsed}
                     onUpdate={(updated) => onUpdate(f.id, updated)}
                     onDelete={() => onDelete(f.id)}
                   />

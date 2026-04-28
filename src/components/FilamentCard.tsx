@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Pencil, Check, X, Minus, Plus } from 'lucide-react';
+import { Pencil, Check, X, Minus, Plus, Archive } from 'lucide-react';
 import type { FilamentColor, FilamentStatus } from '@/lib/types';
 import { STATUS_CYCLE } from '@/lib/types';
 import { contrastColor } from '@/lib/color-utils';
@@ -10,6 +10,7 @@ import AddColorModal from './AddColorModal';
 interface Props {
   filament: FilamentColor;
   editMode: boolean;
+  showUsed?: boolean;
   onUpdate: (updated: FilamentColor) => void;
   onDelete: () => void;
 }
@@ -52,7 +53,7 @@ function StatusIndicator({ status, editable, onCycle }: {
   );
 }
 
-export default function FilamentCard({ filament, editMode, onUpdate, onDelete }: Props) {
+export default function FilamentCard({ filament, editMode, showUsed = false, onUpdate, onDelete }: Props) {
   const [showEditModal, setShowEditModal] = useState(false);
   const colorInputRef = useRef<HTMLInputElement>(null);
   const hasImage = Boolean(filament.imageSrc);
@@ -67,6 +68,16 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
     const idx = STATUS_CYCLE.indexOf(filament.status ?? 'sealed');
     const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length];
     onUpdate({ ...filament, status: next });
+  }
+
+  function markUsed() {
+    if (filament.count <= 0) return;
+    onUpdate({
+      ...filament,
+      count: filament.count - 1,
+      usedCount: (filament.usedCount ?? 0) + 1,
+      status: filament.count - 1 === 0 ? 'sealed' : filament.status,
+    });
   }
 
   return (
@@ -145,10 +156,16 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
 
         {/* Info */}
         <div className="bg-gray-800 px-2.5 py-2 flex flex-col gap-1.5 flex-1">
-          {/* Count */}
+          {/* Count row */}
           <div className="flex items-center justify-between">
-            <span className="text-[11px] text-gray-400 font-medium">Spools</span>
-            {editMode ? (
+            <span className="text-[11px] text-gray-400 font-medium">
+              {showUsed ? 'Used' : 'Spools'}
+            </span>
+            {showUsed ? (
+              <span className="font-bold text-sm text-orange-300">
+                {filament.usedCount ?? 0}
+              </span>
+            ) : editMode ? (
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => adjust(-1)}
@@ -172,15 +189,33 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
             )}
           </div>
 
-          {/* Status */}
-          <div className="flex items-center min-h-[20px]">
-            <StatusIndicator
-              status={filament.status ?? 'sealed'}
-              editable={editMode}
-              onCycle={cycleStatus}
-            />
-            {!editMode && filament.status === 'sealed' && (
-              <span className="text-[11px] text-gray-400 font-medium">Sealed</span>
+          {/* Status / mark-used row */}
+          <div className="flex items-center min-h-[20px] justify-between">
+            <div className="flex items-center">
+              <StatusIndicator
+                status={filament.status ?? 'sealed'}
+                editable={editMode && !showUsed}
+                onCycle={cycleStatus}
+              />
+              {!editMode && filament.status === 'sealed' && !showUsed && (
+                <span className="text-[11px] text-gray-400 font-medium">Sealed</span>
+              )}
+              {showUsed && (
+                <span className="text-[11px] text-gray-500 font-medium">
+                  {filament.count > 0 ? `${filament.count} in stock` : 'depleted'}
+                </span>
+              )}
+            </div>
+            {editMode && !showUsed && (
+              <button
+                onClick={markUsed}
+                disabled={filament.count === 0}
+                title="Mark one spool as fully used"
+                className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium border border-orange-600/40 bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+              >
+                <Archive size={10} />
+                Used
+              </button>
             )}
           </div>
 

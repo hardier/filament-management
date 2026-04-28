@@ -43,8 +43,9 @@ function migrate(raw: Record<string, unknown>): FilamentColor {
     count: (raw.count as number) ?? 0,
     status: (raw.status as FilamentColor['status']) ?? 'sealed',
     isCustom: (raw.isCustom as boolean) ?? false,
-    ...(raw.code     ? { code:     raw.code     as string } : {}),
-    ...(raw.imageSrc ? { imageSrc: raw.imageSrc as string } : {}),
+    ...(raw.code      ? { code:      raw.code      as string } : {}),
+    ...(raw.imageSrc  ? { imageSrc:  raw.imageSrc  as string } : {}),
+    ...(raw.usedCount ? { usedCount: raw.usedCount as number } : {}),
   };
 }
 

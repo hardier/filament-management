@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck, Undo2, X, ScanLine } from 'lucide-react';
+import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck, Undo2, X, ScanLine, Archive } from 'lucide-react';
 import type { FilamentColor, FilamentSection, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
@@ -20,6 +20,7 @@ export default function Home() {
   const [sortMode, setSortMode] = useState<SortMode>('color');
   const [filter, setFilter] = useState<FilterState>({ sections: [], colorFamilies: [] });
   const [showAvailableOnly, setShowAvailableOnly] = useState(true);
+  const [showUsed, setShowUsed] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [deletedItem, setDeletedItem] = useState<FilamentColor | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -108,6 +109,7 @@ export default function Home() {
   }
 
   const totalSpools = inventory.reduce((s, f) => s + f.count, 0);
+  const totalUsed = inventory.reduce((s, f) => s + (f.usedCount ?? 0), 0);
   const inStock = inventory.filter((f) => f.count > 0).length;
   const inUse = inventory.filter((f) => f.status && f.status !== 'sealed').length;
 
@@ -115,7 +117,11 @@ export default function Home() {
 
   function sectionFilaments(section: FilamentSection): FilamentColor[] {
     let items = inventory.filter((f) => f.category === section);
-    if (showAvailableOnly) items = items.filter((f) => f.count > 0);
+    if (showUsed) {
+      items = items.filter((f) => (f.usedCount ?? 0) > 0);
+    } else {
+      if (showAvailableOnly) items = items.filter((f) => f.count > 0);
+    }
     if (filter.colorFamilies.length > 0) {
       items = items.filter((f) => filter.colorFamilies.some((id) => matchesColorFamily(f.hex, id)));
     }
@@ -143,6 +149,7 @@ export default function Home() {
             <span><span className="text-white font-semibold">{totalSpools}</span> spools</span>
             <span><span className="text-white font-semibold">{inStock}</span> in stock</span>
             {inUse > 0 && <span><span className="text-orange-300 font-semibold">{inUse}</span> in use</span>}
+            {totalUsed > 0 && <span><span className="text-amber-400 font-semibold">{totalUsed}</span> used</span>}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -172,16 +179,29 @@ export default function Home() {
             </div>
 
             <button
-              onClick={() => setShowAvailableOnly((v) => !v)}
+              onClick={() => { setShowAvailableOnly((v) => !v); setShowUsed(false); }}
               className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
-                showAvailableOnly
+                !showUsed && showAvailableOnly
                   ? 'bg-teal-500/20 text-teal-300 border-teal-500/30'
                   : 'bg-gray-800 text-gray-400 hover:text-white border-gray-700'
               }`}
               title={showAvailableOnly ? 'Showing in-stock only' : 'Showing all filaments'}
             >
               <PackageCheck size={14} />
-              <span className="hidden sm:inline">{showAvailableOnly ? 'In Stock' : 'All'}</span>
+              <span className="hidden sm:inline">{showAvailableOnly && !showUsed ? 'In Stock' : 'All'}</span>
+            </button>
+
+            <button
+              onClick={() => setShowUsed((v) => !v)}
+              className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
+                showUsed
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  : 'bg-gray-800 text-gray-400 hover:text-white border-gray-700'
+              }`}
+              title="Show used spool history"
+            >
+              <Archive size={14} />
+              <span className="hidden sm:inline">Used</span>
             </button>
 
             <button
@@ -265,13 +285,14 @@ export default function Home() {
         {visibleSections.map((sec) => {
           const items = sectionFilaments(sec);
           // Hide empty sections when any filter is active and nothing matches
-          if ((filter.colorFamilies.length > 0 || showAvailableOnly) && items.length === 0) return null;
+          if ((filter.colorFamilies.length > 0 || showAvailableOnly || showUsed) && items.length === 0) return null;
           return (
             <CategorySection
               key={sec}
               section={sec}
               filaments={items}
               editMode={editMode}
+              showUsed={showUsed}
               sortMode={sortMode}
               onUpdate={handleUpdate}
               onDelete={handleDelete}

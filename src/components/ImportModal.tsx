@@ -193,11 +193,11 @@ export default function ImportModal({ onAdd, onClose }: Props) {
       }
       if (!res.ok) throw new Error((data.error as string) ?? 'Parse failed');
 
-      const rawItems: Array<{
+      const rawItems = (data.items ?? []) as Array<{
         brand: string; name: string; code: string;
         material: string; subtype: string; hex: string; count: number;
         thumbnailBox?: { x: number; y: number; w: number; h: number };
-      }> = data.items ?? [];
+      }>;
 
       const parsed: ParsedItem[] = await Promise.all(
         rawItems.map(async (r, i) => {
