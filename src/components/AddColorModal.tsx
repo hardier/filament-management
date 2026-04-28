@@ -250,45 +250,74 @@ export default function AddColorModal(props: Props) {
             )}
           </div>
 
-          {/* Brand color picker */}
-          {brandColors && brandColors.length > 0 && (
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs text-gray-400">
-                  {effectiveBrand} Colors <span className="text-gray-600">(tap to pick)</span>
-                </label>
-                {name && brandColors.some((bc) => bc.name === name) && (
-                  <span className="flex items-center gap-1 text-xs text-white font-medium">
-                    <span className="w-3 h-3 rounded-full border border-white/30 flex-shrink-0" style={{ backgroundColor: hex }} />
-                    {name}
-                    {code && <span className="font-mono text-[10px] text-gray-400">{code}</span>}
-                  </span>
+          {/* Color name — above swatches so typing filters them */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">Color Name</label>
+            <input
+              autoFocus={!isEdit}
+              value={name}
+              onChange={(e) => handleNameChange(e.target.value)}
+              placeholder={brandColors && brandColors.length > 0 ? 'Type to filter colors below…' : 'e.g. Midnight Blue'}
+              className={inputCls}
+              style={{ fontSize: '16px' }}
+            />
+          </div>
+
+          {/* Brand color picker — filtered by Color Name input */}
+          {brandColors && brandColors.length > 0 && (() => {
+            const query = name.trim().toLowerCase();
+            const filtered = query
+              ? brandColors.filter((bc) =>
+                  bc.name.toLowerCase().includes(query) ||
+                  (bc.code?.toLowerCase().includes(query))
+                )
+              : brandColors;
+            const selected = brandColors.find((bc) => bc.name === name);
+            return (
+              <div className="-mt-2">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs text-gray-400">
+                    {effectiveBrand} Colors
+                    {query && <span className="text-gray-600 ml-1">({filtered.length} match{filtered.length !== 1 ? 'es' : ''})</span>}
+                    {!query && <span className="text-gray-600 ml-1">(tap to pick)</span>}
+                  </label>
+                  {selected && (
+                    <span className="flex items-center gap-1 text-xs text-white font-medium">
+                      <span className="w-3 h-3 rounded-full border border-white/30 flex-shrink-0" style={{ backgroundColor: hex }} />
+                      {selected.name}
+                      {code && <span className="font-mono text-[10px] text-gray-400">{code}</span>}
+                    </span>
+                  )}
+                </div>
+                {filtered.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 max-h-40 overflow-y-auto pr-1">
+                    {filtered.map((bc) => {
+                      const isSelected = name === bc.name;
+                      return (
+                        <button
+                          key={bc.code ?? bc.name}
+                          type="button"
+                          onClick={() => handleBrandColorPick(bc)}
+                          title={`${bc.code ? bc.code + ' – ' : ''}${bc.name}`}
+                          className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-colors ${
+                            isSelected
+                              ? 'border-blue-400 bg-blue-500/20 text-white ring-1 ring-blue-400'
+                              : 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-400'
+                          }`}
+                        >
+                          <span className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20" style={{ backgroundColor: bc.hex }} />
+                          {bc.code && <span className="font-mono text-[10px] text-gray-400">{bc.code}</span>}
+                          <span>{bc.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-gray-600 py-1">No matches — you can still enter the name manually above.</p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
-                {brandColors.map((bc) => {
-                  const selected = name === bc.name;
-                  return (
-                    <button
-                      key={bc.code ?? bc.name}
-                      type="button"
-                      onClick={() => handleBrandColorPick(bc)}
-                      title={`${bc.code ? bc.code + ' – ' : ''}${bc.name}`}
-                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-colors ${
-                        selected
-                          ? 'border-blue-400 bg-blue-500/20 text-white ring-1 ring-blue-400'
-                          : 'border-gray-600 bg-gray-700 text-gray-300 hover:border-gray-400'
-                      }`}
-                    >
-                      <span className="w-3 h-3 rounded-full flex-shrink-0 border border-white/20" style={{ backgroundColor: bc.hex }} />
-                      {bc.code && <span className="font-mono text-[10px] text-gray-400">{bc.code}</span>}
-                      <span>{bc.name}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Type selector */}
           <div>
@@ -303,23 +332,6 @@ export default function AddColorModal(props: Props) {
                 <option key={t} value={t}>{t}</option>
               ))}
             </select>
-          </div>
-
-          {/* Color name */}
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">Color Name</label>
-            <input
-              autoFocus={!isEdit}
-              list="known-color-names"
-              value={name}
-              onChange={(e) => handleNameChange(e.target.value)}
-              placeholder="e.g. Midnight Blue"
-              className={inputCls}
-              style={{ fontSize: '16px' }}
-            />
-            <datalist id="known-color-names">
-              {KNOWN_COLOR_NAMES.map((n) => <option key={n} value={n} />)}
-            </datalist>
           </div>
 
           {/* Color code */}
