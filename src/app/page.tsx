@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck, Undo2, X } from 'lucide-react';
+import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck, Undo2, X, ScanLine } from 'lucide-react';
 import type { FilamentColor, FilamentSection, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
@@ -9,6 +9,7 @@ import { fetchInventory, pushInventory } from '@/lib/api';
 import { matchesColorFamily } from '@/lib/color-filter';
 import CategorySection from '@/components/CategorySection';
 import FilterBar, { type FilterState } from '@/components/FilterBar';
+import ImportModal from '@/components/ImportModal';
 
 const PUSH_DEBOUNCE_MS = 1200;
 
@@ -22,6 +23,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [deletedItem, setDeletedItem] = useState<FilamentColor | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -94,6 +96,15 @@ export default function Home() {
       status: 'sealed',
     };
     persist([...inventory, newColor]);
+  }
+
+  function handleAddMany(partials: Omit<FilamentColor, 'id' | 'status'>[]) {
+    const newColors: FilamentColor[] = partials.map((p, i) => ({
+      ...p,
+      id: `custom-${Date.now()}-${i}-${Math.random().toString(36).slice(2)}`,
+      status: 'sealed',
+    }));
+    persist([...inventory, ...newColors]);
   }
 
   const totalSpools = inventory.reduce((s, f) => s + f.count, 0);
@@ -187,6 +198,15 @@ export default function Home() {
             </button>
 
             <button
+              onClick={() => setShowImport(true)}
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border bg-gray-800 text-gray-400 hover:text-white border-gray-700"
+              title="Import from purchase screenshot"
+            >
+              <ScanLine size={14} />
+              <span className="hidden sm:inline">Import</span>
+            </button>
+
+            <button
               onClick={() => setEditMode((e) => !e)}
               className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
                 editMode
@@ -270,6 +290,14 @@ export default function Home() {
           </button>
         </div>
       </main>
+
+      {/* Import modal */}
+      {showImport && (
+        <ImportModal
+          onAdd={handleAddMany}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {/* Reset confirmation dialog */}
       {showResetConfirm && (
