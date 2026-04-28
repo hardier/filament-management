@@ -20,6 +20,8 @@ export interface FilamentColor {
   id: string;
   name: string;
   hex: string;
+  /** Brand's own color code, e.g. "RB001", "PA02001" */
+  code?: string;
   /** Top-level section (was called category in older data) */
   category: FilamentSection;
   /** Sub-type within the section */

@@ -21,6 +21,7 @@ export default function Home() {
   const [showAvailableOnly, setShowAvailableOnly] = useState(true);
   const [mounted, setMounted] = useState(false);
   const [deletedItem, setDeletedItem] = useState<FilamentColor | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -78,6 +79,12 @@ export default function Home() {
     if (undoTimer.current) clearTimeout(undoTimer.current);
     persist([...inventory, deletedItem]);
     setDeletedItem(null);
+  }
+
+  function handleResetCounts() {
+    const reset = inventory.map((f) => ({ ...f, count: 0, status: 'sealed' as const }));
+    persist(reset);
+    setShowResetConfirm(false);
   }
   function handleAdd(partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) {
     const newColor: FilamentColor = {
@@ -252,7 +259,49 @@ export default function Home() {
             />
           );
         })}
+
+        {/* Subtle danger zone — not prominent */}
+        <div className="flex justify-center pt-4 pb-2">
+          <button
+            onClick={() => setShowResetConfirm(true)}
+            className="text-[11px] text-gray-700 hover:text-gray-500 transition-colors"
+          >
+            Reset all inventory counts
+          </button>
+        </div>
       </main>
+
+      {/* Reset confirmation dialog */}
+      {showResetConfirm && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 px-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowResetConfirm(false); }}
+        >
+          <div className="bg-gray-800 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-700 p-6 flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <h3 className="text-white font-semibold text-base">Reset all counts?</h3>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                This will set every spool count to <strong className="text-white">0</strong> and mark all filaments as <strong className="text-white">Sealed</strong>.
+                Your color catalog and custom colors are kept — only the counts and usage levels are cleared.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                className="flex-1 py-3 rounded-xl text-sm text-gray-400 bg-gray-700 hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetCounts}
+                className="flex-1 py-3 rounded-xl text-sm text-white bg-red-700 hover:bg-red-600 transition-colors font-semibold"
+              >
+                Reset All
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

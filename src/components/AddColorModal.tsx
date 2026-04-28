@@ -85,6 +85,7 @@ export default function AddColorModal(props: Props) {
   const [type, setType] = useState<FilamentType>(f?.type ?? types[0]);
   const [count, setCount] = useState(f?.count ?? 1);
   const [status, setStatus] = useState<FilamentStatus>(f?.status ?? 'sealed');
+  const [code, setCode] = useState(f?.code ?? '');
   const [imageSrc, setImageSrc] = useState<string | undefined>(f?.imageSrc);
   const [catalog, setCatalog] = useState<BrandCatalog | undefined>();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -141,6 +142,7 @@ export default function AddColorModal(props: Props) {
   function handleBrandColorPick(bc: BrandColor) {
     setName(bc.name);
     setHex(bc.hex);
+    setCode(bc.code ?? '');
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -148,11 +150,13 @@ export default function AddColorModal(props: Props) {
     if (!name.trim()) return;
     const finalBrand = effectiveBrand.trim() || 'Bambu Lab';
 
+    const codeVal = code.trim() || undefined;
     if (isEdit && f && props.onSave) {
       props.onSave({
         ...f,
         name: name.trim(),
         hex,
+        code: codeVal,
         category: section,
         type,
         brand: finalBrand,
@@ -164,6 +168,7 @@ export default function AddColorModal(props: Props) {
       props.onAdd({
         name: name.trim(),
         hex,
+        code: codeVal,
         category: section,
         type,
         brand: finalBrand,
@@ -303,6 +308,20 @@ export default function AddColorModal(props: Props) {
             <datalist id="known-color-names">
               {KNOWN_COLOR_NAMES.map((n) => <option key={n} value={n} />)}
             </datalist>
+          </div>
+
+          {/* Color code */}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">
+              Color Code <span className="text-gray-600">(optional — e.g. RB001, PA02001)</span>
+            </label>
+            <input
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="e.g. RB001"
+              className={`${inputCls} font-mono`}
+              style={{ fontSize: '16px' }}
+            />
           </div>
 
           {/* Color picker */}

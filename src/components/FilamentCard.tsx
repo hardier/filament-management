@@ -81,13 +81,22 @@ export default function FilamentCard({ filament, editMode, onUpdate, onDelete }:
               : { backgroundColor: filament.hex }
           }
         >
-          {/* Color name */}
-          <span
-            className="text-xs font-bold px-2 text-center leading-tight"
-            style={{ color: textColor, textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.8)' : undefined }}
-          >
-            {filament.name}
-          </span>
+          {/* Color name + optional code */}
+          <div className="flex flex-col items-center gap-0.5 px-2">
+            <span
+              className="text-xs font-bold text-center leading-tight"
+              style={{ color: textColor, textShadow: hasImage ? '0 1px 3px rgba(0,0,0,0.8)' : undefined }}
+            >
+              {filament.name}
+            </span>
+            {filament.code && (
+              <span
+                className="font-mono text-[9px] leading-none px-1 py-0.5 rounded bg-black/30 text-white/70"
+              >
+                {filament.code}
+              </span>
+            )}
+          </div>
 
           {/* Brand badge */}
           <div
