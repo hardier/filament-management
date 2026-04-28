@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, PackageCheck, Undo2, X, Archive, PackagePlus } from 'lucide-react';
+import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, Undo2, X, Archive, PackagePlus } from 'lucide-react';
 import type { FilamentColor, FilamentSection, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
@@ -19,7 +19,6 @@ export default function Home() {
   const [editMode, setEditMode] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('color');
   const [filter, setFilter] = useState<FilterState>({ sections: [], colorFamilies: [] });
-  const [showAvailableOnly, setShowAvailableOnly] = useState(true);
   const [showUsed, setShowUsed] = useState(false);
   const [tab, setTab] = useState<'inventory' | 'incoming'>('inventory');
   const [mounted, setMounted] = useState(false);
@@ -129,7 +128,7 @@ export default function Home() {
     if (showUsed) {
       items = items.filter((f) => (f.usedCount ?? 0) > 0);
     } else {
-      if (showAvailableOnly) items = items.filter((f) => f.count > 0);
+      items = items.filter((f) => f.count > 0);
     }
     if (filter.colorFamilies.length > 0) {
       items = items.filter((f) => filter.colorFamilies.some((id) => matchesColorFamily(f.hex, id)));
@@ -186,19 +185,6 @@ export default function Home() {
                  syncState === 'offline' ? 'Offline'  : ''}
               </span>
             </div>
-
-            <button
-              onClick={() => { setShowAvailableOnly((v) => !v); setShowUsed(false); }}
-              className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
-                !showUsed && showAvailableOnly
-                  ? 'bg-teal-500/20 text-teal-300 border-teal-500/30'
-                  : 'bg-gray-800 text-gray-400 hover:text-white border-gray-700'
-              }`}
-              title={showAvailableOnly ? 'Showing in-stock only' : 'Showing all filaments'}
-            >
-              <PackageCheck size={14} />
-              <span className="hidden sm:inline">{showAvailableOnly && !showUsed ? 'In Stock' : 'All'}</span>
-            </button>
 
             <button
               onClick={() => setShowUsed((v) => !v)}
@@ -327,7 +313,7 @@ export default function Home() {
           <>
             {visibleSections.map((sec) => {
               const items = sectionFilaments(sec);
-              if ((filter.colorFamilies.length > 0 || showAvailableOnly || showUsed) && items.length === 0) return null;
+              if (items.length === 0) return null;
               return (
                 <CategorySection
                   key={sec}
