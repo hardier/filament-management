@@ -113,18 +113,22 @@ export default function AddColorModal(props: Props) {
   }, []);
 
   const brandColors: BrandColor[] | undefined = getBrandColors(effectiveBrand, catalog);
+  // Fall back to Bambu Lab swatches for brands without their own catalog
+  const bambuColors: BrandColor[] | undefined = getBrandColors('Bambu Lab', catalog);
+  const displayColors: BrandColor[] | undefined = brandColors ?? (effectiveBrand ? bambuColors : undefined);
+  const isFallback = !brandColors && !!displayColors;
 
   // Filter brand colors live as the user types in the Color Name box
   const colorQuery = name.trim().toLowerCase();
-  const filteredBrandColors = brandColors
+  const filteredBrandColors = displayColors
     ? (colorQuery
-        ? brandColors.filter((bc) =>
+        ? displayColors.filter((bc) =>
             bc.name.toLowerCase().includes(colorQuery) ||
             bc.code?.toLowerCase().includes(colorQuery)
           )
-        : brandColors)
+        : displayColors)
     : undefined;
-  const selectedBrandColor = brandColors?.find((bc) => bc.name === name);
+  const selectedBrandColor = displayColors?.find((bc) => bc.name === name);
 
   // Global paste listener
   useEffect(() => {
@@ -280,11 +284,13 @@ export default function AddColorModal(props: Props) {
           </div>
 
           {/* Brand color picker — filtered by Color Name input */}
-          {filteredBrandColors !== undefined && brandColors!.length > 0 && (
+          {filteredBrandColors !== undefined && displayColors!.length > 0 && (
             <div className="-mt-2">
               <div className="flex items-center justify-between mb-1.5">
                 <label className="block text-xs text-gray-400">
-                  {effectiveBrand} Colors
+                  {isFallback
+                    ? <span>Color Reference <span className="text-gray-600">(Bambu Lab)</span></span>
+                    : <span>{effectiveBrand} Colors</span>}
                   {colorQuery
                     ? <span className="text-gray-600 ml-1">({filteredBrandColors.length} match{filteredBrandColors.length !== 1 ? 'es' : ''})</span>
                     : <span className="text-gray-600 ml-1">(tap to pick)</span>}
@@ -318,7 +324,7 @@ export default function AddColorModal(props: Props) {
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-gray-600 py-1">No matches — you can still enter the name manually above.</p>
+                <p className="text-xs text-gray-600 py-1">No matches — enter the name and hex color manually above.</p>
               )}
             </div>
           )}

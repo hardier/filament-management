@@ -249,16 +249,6 @@ export default function Home() {
             </div>
 
             <button
-              onClick={handleUndoHistory}
-              disabled={history.length === 0}
-              title={history.length > 0 ? `Undo last action (${history.length} step${history.length !== 1 ? 's' : ''} available) · ⌘Z` : 'Nothing to undo'}
-              className="flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border bg-gray-800 border-gray-700 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
-            >
-              <Undo2 size={14} />
-              <span className="hidden sm:inline">Undo</span>
-            </button>
-
-            <button
               onClick={() => setSortMode((m) => m === 'color' ? 'availability' : 'color')}
               className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
                 sortMode === 'availability'
@@ -285,9 +275,19 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Filter bar — full width, single scrollable row */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-2">
-          <FilterBar filter={filter} onChange={setFilter} />
+        {/* Filter bar + subtle undo icon */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-2 flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <FilterBar filter={filter} onChange={setFilter} />
+          </div>
+          <button
+            onClick={handleUndoHistory}
+            disabled={history.length === 0}
+            title={history.length > 0 ? `Undo (${history.length} step${history.length !== 1 ? 's' : ''}) · ⌘Z` : 'Nothing to undo'}
+            className="flex-shrink-0 p-1.5 rounded-lg text-gray-600 hover:text-gray-300 disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+          >
+            <Undo2 size={14} />
+          </button>
         </div>
 
         {/* Tab switcher — own row, full width on mobile */}
