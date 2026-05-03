@@ -24,8 +24,10 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [deletedItem, setDeletedItem] = useState<FilamentColor | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [history, setHistory] = useState<FilamentColor[][]>([]);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inventoryRef = useRef<FilamentColor[]>([]);
 
   useEffect(() => {
     const local = getLocalInventory();
@@ -56,7 +58,34 @@ export default function Home() {
     }, PUSH_DEBOUNCE_MS);
   }
 
+  // Keep ref in sync so persist can snapshot current inventory without stale closure
+  useEffect(() => { inventoryRef.current = inventory; }, [inventory]);
+
+  // Cmd+Z / Ctrl+Z keyboard shortcut for undo
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        setHistory((h) => {
+          if (h.length === 0) return h;
+          const prev = h[h.length - 1];
+          setInventory(prev);
+          setLocalInventory(prev);
+          schedulePush(prev);
+          if (undoTimer.current) clearTimeout(undoTimer.current);
+          setDeletedItem(null);
+          return h.slice(0, -1);
+        });
+      }
+    }
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const persist = useCallback((next: FilamentColor[]) => {
+    // Push current state to history (cap at 20 entries)
+    setHistory((prev) => [...prev.slice(-19), inventoryRef.current]);
     setInventory(next);
     setLocalInventory(next);
     schedulePush(next);
@@ -80,6 +109,18 @@ export default function Home() {
     if (!deletedItem) return;
     if (undoTimer.current) clearTimeout(undoTimer.current);
     persist([...inventory, deletedItem]);
+    setDeletedItem(null);
+  }
+
+  function handleUndoHistory() {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setHistory((h) => h.slice(0, -1));
+    setInventory(prev);
+    setLocalInventory(prev);
+    schedulePush(prev);
+    // Clear the delete toast if visible — undo covers it
+    if (undoTimer.current) clearTimeout(undoTimer.current);
     setDeletedItem(null);
   }
 
@@ -185,6 +226,16 @@ export default function Home() {
                  syncState === 'offline' ? 'Offline'  : ''}
               </span>
             </div>
+
+            <button
+              onClick={handleUndoHistory}
+              disabled={history.length === 0}
+              title={history.length > 0 ? `Undo last action (${history.length} step${history.length !== 1 ? 's' : ''} available) · ⌘Z` : 'Nothing to undo'}
+              className="flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border bg-gray-800 border-gray-700 text-gray-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              <Undo2 size={14} />
+              <span className="hidden sm:inline">Undo</span>
+            </button>
 
             <button
               onClick={() => setSortMode((m) => m === 'color' ? 'availability' : 'color')}

@@ -56,13 +56,15 @@ export const COLOR_FAMILIES: ColorFamily[] = [
     id: 'purple',
     label: 'Purple',
     dot: '#7B2D8B',
-    match: (hex) => { const [h, s] = hexToHsl(hex); return h >= 265 && h < 300 && s > 0.25; },
+    // Extended to 240 — many purple colors (violet, indigo-purple) have hues 240–265
+    match: (hex) => { const [h, s] = hexToHsl(hex); return h >= 240 && h < 305 && s > 0.2; },
   },
   {
     id: 'blue',
     label: 'Blue',
     dot: '#1E6FCC',
-    match: (hex) => { const [h, s] = hexToHsl(hex); return h >= 200 && h < 265 && s > 0.2; },
+    // Narrowed to 245 so violet-blues (240+) are covered by purple too
+    match: (hex) => { const [h, s] = hexToHsl(hex); return h >= 200 && h < 245 && s > 0.2; },
   },
   {
     id: 'teal',
