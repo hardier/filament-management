@@ -9,7 +9,9 @@ import { KNOWN_BRAND_NAMES, getBrandColors, loadBrandCatalog, type BrandColor, t
 
 interface AddProps {
   section: FilamentSection;
-  onAdd: (color: Omit<FilamentColor, 'id' | 'count' | 'status'>) => void;
+  /** Show a quantity stepper so the user can specify how many spools to add */
+  showCount?: boolean;
+  onAdd: (color: Omit<FilamentColor, 'id' | 'status'>) => void;
   onClose: () => void;
   filament?: undefined;
   onSave?: undefined;
@@ -21,6 +23,7 @@ interface EditProps {
   onClose: () => void;
   section?: undefined;
   onAdd?: undefined;
+  showCount?: undefined;
 }
 
 type Props = AddProps | EditProps;
@@ -184,6 +187,7 @@ export default function AddColorModal(props: Props) {
         category: section,
         type,
         brand: finalBrand,
+        count,
         isCustom: true,
         ...(imageSrc ? { imageSrc } : {}),
       });
@@ -367,6 +371,27 @@ export default function AddColorModal(props: Props) {
               />
             </div>
           </div>
+
+          {/* Quantity stepper — add-incoming mode */}
+          {!isEdit && props.showCount && (
+            <div>
+              <label className="block text-xs text-gray-400 mb-1.5">Quantity Ordered</label>
+              <div className="flex items-center gap-2 bg-gray-700 rounded-lg px-3 py-2">
+                <button
+                  type="button"
+                  onClick={() => setCount((c) => Math.max(1, c - 1))}
+                  disabled={count <= 1}
+                  className="w-8 h-8 rounded bg-gray-600 hover:bg-gray-500 disabled:opacity-30 flex items-center justify-center text-white text-lg font-bold transition-colors"
+                >−</button>
+                <span className="flex-1 text-center text-white font-bold text-base">{count}</span>
+                <button
+                  type="button"
+                  onClick={() => setCount((c) => c + 1)}
+                  className="w-8 h-8 rounded bg-gray-600 hover:bg-gray-500 flex items-center justify-center text-white text-lg font-bold transition-colors"
+                >+</button>
+              </div>
+            </div>
+          )}
 
           {/* Count + status — edit mode only */}
           {isEdit && (

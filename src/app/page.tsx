@@ -129,21 +129,21 @@ export default function Home() {
     persist(reset);
     setShowResetConfirm(false);
   }
-  function handleAdd(partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) {
+  function handleAdd(partial: Omit<FilamentColor, 'id' | 'status'>) {
     const newColor: FilamentColor = {
       ...partial,
       id: `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      count: 1,
+      count: partial.count ?? 1,
       status: 'sealed',
     };
     persist([...inventory, newColor]);
   }
 
-  function handleAddIncoming(partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) {
+  function handleAddIncoming(partial: Omit<FilamentColor, 'id' | 'status'>) {
     const newColor: FilamentColor = {
       ...partial,
       id: `incoming-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      count: 1,
+      count: partial.count ?? 1,
       status: 'sealed',
       isCustom: true,
       incoming: true,
@@ -151,8 +151,28 @@ export default function Home() {
     persist([...inventory, newColor]);
   }
 
-  function handleReceive(id: string) {
-    persist(inventory.map((f) => f.id === id ? { ...f, incoming: false } : f));
+  function handleReceive(id: string, receivedCount: number) {
+    const item = inventory.find((f) => f.id === id);
+    if (!item) return;
+
+    if (receivedCount >= item.count) {
+      // All spools received — simply move to inventory
+      persist(inventory.map((f) => f.id === id ? { ...f, incoming: false } : f));
+    } else {
+      // Partial receive — split into received (inventory) + remaining (incoming)
+      const remaining: FilamentColor = { ...item, count: item.count - receivedCount };
+      const received: FilamentColor = {
+        ...item,
+        id: `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        count: receivedCount,
+        incoming: false,
+      };
+      persist([
+        ...inventory.filter((f) => f.id !== id),
+        remaining,
+        received,
+      ]);
+    }
   }
 
   const incomingItems = inventory.filter((f) => f.incoming);
@@ -161,6 +181,7 @@ export default function Home() {
   const totalUsed = stockItems.reduce((s, f) => s + (f.usedCount ?? 0), 0);
   const inStock = stockItems.filter((f) => f.count > 0).length;
   const inUse = stockItems.filter((f) => f.status && f.status !== 'sealed').length;
+  const usedColorsCount = stockItems.filter((f) => (f.usedCount ?? 0) > 0).length;
 
   const visibleSections = filter.sections.length > 0 ? filter.sections : ALL_SECTIONS;
 
@@ -194,11 +215,11 @@ export default function Home() {
             <h1 className="text-base sm:text-lg font-bold tracking-tight truncate">Filament Manager</h1>
           </div>
 
-          <div className="hidden sm:flex items-center gap-3 text-xs text-gray-400 flex-shrink-0">
-            <span><span className="text-white font-semibold">{totalSpools}</span> spools</span>
-            <span><span className="text-white font-semibold">{inStock}</span> in stock</span>
-            {inUse > 0 && <span><span className="text-orange-300 font-semibold">{inUse}</span> in use</span>}
-            {totalUsed > 0 && <span><span className="text-amber-400 font-semibold">{totalUsed}</span> used</span>}
+          <div className="flex items-center gap-2 sm:gap-3 text-xs text-gray-400 flex-shrink-0">
+            <span className="hidden xs:inline"><span className="text-white font-semibold">{totalSpools}</span> <span className="hidden sm:inline">spools</span></span>
+            <span><span className="text-white font-semibold">{inStock}</span> <span className="hidden sm:inline">in </span>stock</span>
+            {inUse > 0 && <span className="hidden sm:inline"><span className="text-orange-300 font-semibold">{inUse}</span> in use</span>}
+            {totalUsed > 0 && <span className="hidden sm:inline"><span className="text-amber-400 font-semibold">{totalUsed}</span> used</span>}
           </div>
 
           <div className="flex items-center gap-1.5">
@@ -264,34 +285,43 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Filter bar + tab switcher */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3 flex items-center gap-3">
-          <div className="flex-1">
-            <FilterBar filter={filter} onChange={setFilter} />
-          </div>
-          <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5 border border-gray-700 flex-shrink-0">
+        {/* Filter bar — full width, single scrollable row */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-2">
+          <FilterBar filter={filter} onChange={setFilter} />
+        </div>
+
+        {/* Tab switcher — own row, full width on mobile */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3">
+          <div className="flex items-center gap-1 bg-gray-800 rounded-lg p-0.5 border border-gray-700 w-full sm:w-auto sm:inline-flex">
             <button
               onClick={() => setTab('inventory')}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 tab === 'inventory'
                   ? 'bg-gray-600 text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
               Inventory
+              {inStock > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  tab === 'inventory' ? 'bg-blue-500 text-white' : 'bg-blue-500/30 text-blue-300'
+                }`}>
+                  {inStock}
+                </span>
+              )}
             </button>
             <button
               onClick={() => setTab('incoming')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 tab === 'incoming'
                   ? 'bg-gray-600 text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              <PackagePlus size={12} />
+              <PackagePlus size={12} className="flex-shrink-0" />
               Incoming
               {incomingItems.length > 0 && (
-                <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   tab === 'incoming' ? 'bg-indigo-500 text-white' : 'bg-indigo-500/30 text-indigo-300'
                 }`}>
                   {incomingItems.length}
@@ -300,18 +330,18 @@ export default function Home() {
             </button>
             <button
               onClick={() => setTab('used')}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+              className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                 tab === 'used'
                   ? 'bg-gray-600 text-white'
                   : 'text-gray-400 hover:text-white'
               }`}
             >
               Used
-              {totalUsed > 0 && (
-                <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+              {usedColorsCount > 0 && (
+                <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   tab === 'used' ? 'bg-amber-500 text-white' : 'bg-amber-500/30 text-amber-300'
                 }`}>
-                  {totalUsed}
+                  {usedColorsCount}
                 </span>
               )}
             </button>

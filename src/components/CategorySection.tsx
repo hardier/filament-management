@@ -16,7 +16,7 @@ interface Props {
   sortMode: SortMode;
   onUpdate: (id: string, updated: FilamentColor) => void;
   onDelete: (id: string) => void;
-  onAdd: (partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) => void;
+  onAdd: (partial: Omit<FilamentColor, 'id' | 'status'>) => void;
 }
 
 const SECTION_STYLE: Record<FilamentSection, { bg: string; badge: string; type: string }> = {

@@ -140,16 +140,14 @@ export default function FilamentCard({ filament, editMode, showUsed = false, onU
                 className="sr-only"
               />
 
-              {/* Delete — top-right (custom only) */}
-              {filament.isCustom && (
-                <button
-                  onClick={onDelete}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
-                  title="Remove color"
-                >
-                  <X size={11} />
-                </button>
-              )}
+              {/* Delete — top-right, any filament in edit mode */}
+              <button
+                onClick={onDelete}
+                className="absolute top-1 right-1 p-1 rounded-full bg-black/25 hover:bg-black/50 transition-colors text-white/70 hover:text-white"
+                title="Remove color"
+              >
+                <X size={11} />
+              </button>
             </>
           )}
         </div>

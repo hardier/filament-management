@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PackagePlus, PackageCheck, Pencil, X, Plus } from 'lucide-react';
+import { PackagePlus, PackageCheck, Pencil, X, Plus, Minus } from 'lucide-react';
 import type { FilamentColor, FilamentSection } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { contrastColor } from '@/lib/color-utils';
@@ -10,10 +10,10 @@ import AddColorModal from './AddColorModal';
 interface Props {
   items: FilamentColor[];
   editMode: boolean;
-  onReceive: (id: string) => void;
+  onReceive: (id: string, count: number) => void;
   onUpdate: (id: string, updated: FilamentColor) => void;
   onDelete: (id: string) => void;
-  onAdd: (partial: Omit<FilamentColor, 'id' | 'count' | 'status'>) => void;
+  onAdd: (partial: Omit<FilamentColor, 'id' | 'status'>) => void;
 }
 
 interface EditingItem {
@@ -24,6 +24,19 @@ interface EditingItem {
 export default function IncomingPanel({ items, editMode, onReceive, onUpdate, onDelete, onAdd }: Props) {
   const [addSection, setAddSection] = useState<FilamentSection | null>(null);
   const [editingItem, setEditingItem] = useState<EditingItem | null>(null);
+  const [receivingItem, setReceivingItem] = useState<FilamentColor | null>(null);
+  const [receiveCount, setReceiveCount] = useState(1);
+
+  function openReceiveDialog(f: FilamentColor) {
+    setReceivingItem(f);
+    setReceiveCount(f.count);
+  }
+
+  function confirmReceive() {
+    if (!receivingItem) return;
+    onReceive(receivingItem.id, receiveCount);
+    setReceivingItem(null);
+  }
 
   const grouped = ALL_SECTIONS.map((s) => ({
     section: s,
@@ -122,7 +135,7 @@ export default function IncomingPanel({ items, editMode, onReceive, onUpdate, on
                       </>
                     )}
                     <button
-                      onClick={() => onReceive(f.id)}
+                      onClick={() => openReceiveDialog(f)}
                       title="Mark as received — move to inventory"
                       className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-600/20 text-green-400 border border-green-600/30 hover:bg-green-600/30 transition-colors"
                     >
@@ -150,20 +163,120 @@ export default function IncomingPanel({ items, editMode, onReceive, onUpdate, on
         ))}
       </div>
 
+      {/* Add modal — showCount so user can specify how many were ordered */}
       {addSection && (
         <AddColorModal
           section={addSection}
+          showCount
           onAdd={onAdd}
           onClose={() => setAddSection(null)}
         />
       )}
 
+      {/* Edit modal */}
       {editingItem && (
         <AddColorModal
           filament={editingItem.filament}
           onSave={(updated) => { onUpdate(editingItem.id, updated); setEditingItem(null); }}
           onClose={() => setEditingItem(null)}
         />
+      )}
+
+      {/* Receive-quantity dialog */}
+      {receivingItem && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-end sm:items-center justify-center z-50"
+          onClick={(e) => { if (e.target === e.currentTarget) setReceivingItem(null); }}
+        >
+          <div className="bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-xs border border-gray-700 pb-safe">
+            {/* Handle bar */}
+            <div className="flex justify-center pt-3 sm:hidden">
+              <div className="w-10 h-1 rounded-full bg-gray-600" />
+            </div>
+
+            <div className="px-5 py-4 flex flex-col gap-4">
+              {/* Header */}
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-lg flex-shrink-0 border border-white/10"
+                  style={
+                    receivingItem.imageSrc
+                      ? { backgroundImage: `url(${receivingItem.imageSrc})`, backgroundSize: 'cover' }
+                      : { backgroundColor: receivingItem.hex }
+                  }
+                />
+                <div className="min-w-0">
+                  <p className="text-white font-semibold text-sm truncate">{receivingItem.name}</p>
+                  <p className="text-gray-400 text-xs truncate">{receivingItem.brand} · {receivingItem.type}</p>
+                </div>
+                <button
+                  onClick={() => setReceivingItem(null)}
+                  className="ml-auto text-gray-500 hover:text-white p-1 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {/* Count picker */}
+              <div>
+                <p className="text-xs text-gray-400 mb-2">
+                  How many spools did you receive?
+                  <span className="text-gray-600 ml-1">({receivingItem.count} ordered)</span>
+                </p>
+                <div className="flex items-center gap-3 bg-gray-700 rounded-xl px-4 py-3">
+                  <button
+                    type="button"
+                    onClick={() => setReceiveCount((c) => Math.max(1, c - 1))}
+                    disabled={receiveCount <= 1}
+                    className="w-9 h-9 rounded-lg bg-gray-600 hover:bg-gray-500 disabled:opacity-30 flex items-center justify-center text-white transition-colors"
+                  >
+                    <Minus size={16} />
+                  </button>
+                  <span className="flex-1 text-center text-white font-bold text-xl">{receiveCount}</span>
+                  <button
+                    type="button"
+                    onClick={() => setReceiveCount((c) => Math.min(receivingItem.count, c + 1))}
+                    disabled={receiveCount >= receivingItem.count}
+                    className="w-9 h-9 rounded-lg bg-gray-600 hover:bg-gray-500 disabled:opacity-30 flex items-center justify-center text-white transition-colors"
+                  >
+                    <Plus size={16} />
+                  </button>
+                </div>
+
+                {/* Remainder hint */}
+                {receiveCount < receivingItem.count && (
+                  <p className="text-xs text-indigo-400 mt-2 text-center">
+                    {receivingItem.count - receiveCount} spool{receivingItem.count - receiveCount !== 1 ? 's' : ''} will remain in Incoming
+                  </p>
+                )}
+                {receiveCount === receivingItem.count && (
+                  <p className="text-xs text-green-400 mt-2 text-center">
+                    All {receiveCount} spool{receiveCount !== 1 ? 's' : ''} moved to inventory
+                  </p>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReceivingItem(null)}
+                  className="flex-1 py-3 rounded-xl text-sm text-gray-400 bg-gray-700 hover:bg-gray-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmReceive}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-white bg-green-600 hover:bg-green-500 transition-colors flex items-center justify-center gap-1.5"
+                >
+                  <PackageCheck size={15} />
+                  Receive {receiveCount}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
