@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, Undo2, X, Archive, PackagePlus } from 'lucide-react';
+import { Layers, Pencil, Check, Palette, ArrowDownUp, Cloud, CloudOff, Loader2, Undo2, X, PackagePlus } from 'lucide-react';
 import type { FilamentColor, FilamentSection, SortMode, SyncState } from '@/lib/types';
 import { ALL_SECTIONS } from '@/lib/types';
 import { getLocalInventory, setLocalInventory, migrateInventory } from '@/lib/storage';
@@ -19,8 +19,8 @@ export default function Home() {
   const [editMode, setEditMode] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>('color');
   const [filter, setFilter] = useState<FilterState>({ sections: [], colorFamilies: [] });
-  const [showUsed, setShowUsed] = useState(false);
-  const [tab, setTab] = useState<'inventory' | 'incoming'>('inventory');
+  const [tab, setTab] = useState<'inventory' | 'incoming' | 'used'>('inventory');
+  const showUsed = tab === 'used';
   const [mounted, setMounted] = useState(false);
   const [deletedItem, setDeletedItem] = useState<FilamentColor | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -187,19 +187,6 @@ export default function Home() {
             </div>
 
             <button
-              onClick={() => setShowUsed((v) => !v)}
-              className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
-                showUsed
-                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                  : 'bg-gray-800 text-gray-400 hover:text-white border-gray-700'
-              }`}
-              title="Show used spool history"
-            >
-              <Archive size={14} />
-              <span className="hidden sm:inline">Used</span>
-            </button>
-
-            <button
               onClick={() => setSortMode((m) => m === 'color' ? 'availability' : 'color')}
               className={`flex items-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-colors border ${
                 sortMode === 'availability'
@@ -260,6 +247,23 @@ export default function Home() {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => setTab('used')}
+              className={`flex items-center gap-1 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                tab === 'used'
+                  ? 'bg-gray-600 text-white'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Used
+              {totalUsed > 0 && (
+                <span className={`ml-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
+                  tab === 'used' ? 'bg-amber-500 text-white' : 'bg-amber-500/30 text-amber-300'
+                }`}>
+                  {totalUsed}
+                </span>
+              )}
+            </button>
           </div>
         </div>
       </header>
@@ -313,7 +317,9 @@ export default function Home() {
           <>
             {visibleSections.map((sec) => {
               const items = sectionFilaments(sec);
-              if (items.length === 0) return null;
+              // Always show sections in edit mode (so Add button is accessible);
+              // hide empty sections otherwise
+              if (items.length === 0 && !editMode) return null;
               return (
                 <CategorySection
                   key={sec}

@@ -30,31 +30,18 @@ export default function IncomingPanel({ items, editMode, onReceive, onUpdate, on
     items: items.filter((f) => f.category === s),
   })).filter((g) => g.items.length > 0);
 
-  if (items.length === 0) {
-    return (
-      <div className="flex flex-col items-center gap-4 py-16 text-center">
-        <PackagePlus size={40} className="text-gray-700" />
-        <div>
-          <p className="text-gray-400 text-sm font-medium">No incoming filaments</p>
-          <p className="text-gray-600 text-xs mt-1">Add orders you&apos;ve placed but haven&apos;t received yet.</p>
-        </div>
-        <div className="flex gap-2 flex-wrap justify-center">
-          {ALL_SECTIONS.map((s) => (
-            <button
-              key={s}
-              onClick={() => setAddSection(s)}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-dashed border-gray-600 hover:border-gray-400 text-gray-500 hover:text-gray-300 transition-colors text-xs"
-            >
-              <Plus size={13} /> Add {s} filament
-            </button>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col gap-4">
+      {items.length === 0 && (
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <PackagePlus size={40} className="text-gray-700" />
+          <div>
+            <p className="text-gray-400 text-sm font-medium">No incoming filaments</p>
+            <p className="text-gray-600 text-xs mt-1">Add orders you&apos;ve placed but haven&apos;t received yet.</p>
+          </div>
+        </div>
+      )}
+
       {grouped.map(({ section, items: sectionItems }) => (
         <div key={section}>
           <div className="flex items-center gap-2 mb-2">
