@@ -178,7 +178,7 @@ export default function Home() {
   const incomingItems = inventory.filter((f) => f.incoming);
   const filteredIncomingItems = incomingItems.filter((f) => {
     if (filter.sections.length > 0 && !filter.sections.includes(f.category)) return false;
-    if (filter.colorFamilies.length > 0 && !filter.colorFamilies.some((id) => matchesColorFamily(f.hex, id))) return false;
+    if (filter.colorFamilies.length > 0 && !filter.colorFamilies.some((id) => matchesColorFamily(f.hex, id, f.name))) return false;
     return true;
   });
   const stockItems = inventory.filter((f) => !f.incoming);
@@ -198,7 +198,7 @@ export default function Home() {
       items = items.filter((f) => f.count > 0);
     }
     if (filter.colorFamilies.length > 0) {
-      items = items.filter((f) => filter.colorFamilies.some((id) => matchesColorFamily(f.hex, id)));
+      items = items.filter((f) => filter.colorFamilies.some((id) => matchesColorFamily(f.hex, id, f.name)));
     }
     return items;
   }
