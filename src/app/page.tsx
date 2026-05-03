@@ -176,6 +176,11 @@ export default function Home() {
   }
 
   const incomingItems = inventory.filter((f) => f.incoming);
+  const filteredIncomingItems = incomingItems.filter((f) => {
+    if (filter.sections.length > 0 && !filter.sections.includes(f.category)) return false;
+    if (filter.colorFamilies.length > 0 && !filter.colorFamilies.some((id) => matchesColorFamily(f.hex, id))) return false;
+    return true;
+  });
   const stockItems = inventory.filter((f) => !f.incoming);
   const totalSpools = stockItems.reduce((s, f) => s + f.count, 0);
   const totalUsed = stockItems.reduce((s, f) => s + (f.usedCount ?? 0), 0);
@@ -387,7 +392,7 @@ export default function Home() {
 
         {tab === 'incoming' ? (
           <IncomingPanel
-            items={incomingItems}
+            items={filteredIncomingItems}
             editMode={editMode}
             onReceive={handleReceive}
             onUpdate={handleUpdate}
