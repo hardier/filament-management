@@ -114,26 +114,22 @@ export default function IncomingPanel({ items, editMode, onReceive, onUpdate, on
                     </div>
                   </div>
 
-                  {/* Actions */}
+                  {/* Actions — always visible for incoming items */}
                   <div className="flex items-center gap-1 pr-3">
-                    {editMode && (
-                      <>
-                        <button
-                          onClick={() => setEditingItem({ id: f.id, filament: f })}
-                          className="p-1.5 text-gray-500 hover:text-white rounded-lg hover:bg-gray-700 transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil size={13} />
-                        </button>
-                        <button
-                          onClick={() => onDelete(f.id)}
-                          className="p-1.5 text-gray-600 hover:text-red-400 rounded-lg hover:bg-gray-700 transition-colors"
-                          title="Remove"
-                        >
-                          <X size={13} />
-                        </button>
-                      </>
-                    )}
+                    <button
+                      onClick={() => setEditingItem({ id: f.id, filament: f })}
+                      className="p-1.5 text-gray-500 hover:text-white rounded-lg hover:bg-gray-700 transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(f.id)}
+                      className="p-1.5 text-gray-600 hover:text-red-400 rounded-lg hover:bg-gray-700 transition-colors"
+                      title="Remove"
+                    >
+                      <X size={13} />
+                    </button>
                     <button
                       onClick={() => openReceiveDialog(f)}
                       title="Mark as received — move to inventory"
