@@ -151,27 +151,62 @@ export default function Home() {
     persist([...inventory, newColor]);
   }
 
+  /** Two filaments are "the same kind" if they share name, brand, type and category */
+  function isSameKind(a: FilamentColor, b: FilamentColor): boolean {
+    return (
+      a.name.trim().toLowerCase() === b.name.trim().toLowerCase() &&
+      a.brand.trim().toLowerCase() === b.brand.trim().toLowerCase() &&
+      a.type === b.type &&
+      a.category === b.category
+    );
+  }
+
   function handleReceive(id: string, receivedCount: number) {
     const item = inventory.find((f) => f.id === id);
     if (!item) return;
 
+    // Check if an existing inventory entry of the same kind already exists
+    const existing = inventory.find((f) => !f.incoming && isSameKind(f, item));
+
     if (receivedCount >= item.count) {
-      // All spools received — simply move to inventory
-      persist(inventory.map((f) => f.id === id ? { ...f, incoming: false } : f));
+      // Fully received — remove the incoming entry
+      if (existing) {
+        // Merge count into the existing inventory entry
+        persist(
+          inventory
+            .filter((f) => f.id !== id)
+            .map((f) => f.id === existing.id ? { ...f, count: f.count + receivedCount } : f)
+        );
+      } else {
+        // Nothing to merge — just flip incoming flag
+        persist(inventory.map((f) => f.id === id ? { ...f, incoming: false } : f));
+      }
     } else {
-      // Partial receive — split into received (inventory) + remaining (incoming)
-      const remaining: FilamentColor = { ...item, count: item.count - receivedCount };
-      const received: FilamentColor = {
-        ...item,
-        id: `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-        count: receivedCount,
-        incoming: false,
-      };
-      persist([
-        ...inventory.filter((f) => f.id !== id),
-        remaining,
-        received,
-      ]);
+      // Partial receive — reduce the incoming count by receivedCount
+      if (existing) {
+        // Merge received portion into existing inventory entry
+        persist(
+          inventory.map((f) => {
+            if (f.id === id) return { ...f, count: f.count - receivedCount };
+            if (f.id === existing.id) return { ...f, count: f.count + receivedCount };
+            return f;
+          })
+        );
+      } else {
+        // No existing entry — create a new inventory entry for the received portion
+        const remaining: FilamentColor = { ...item, count: item.count - receivedCount };
+        const received: FilamentColor = {
+          ...item,
+          id: `custom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          count: receivedCount,
+          incoming: false,
+        };
+        persist([
+          ...inventory.filter((f) => f.id !== id),
+          remaining,
+          received,
+        ]);
+      }
     }
   }
 
