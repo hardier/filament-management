@@ -219,9 +219,9 @@ export default function Home() {
   const stockItems = inventory.filter((f) => !f.incoming);
   const totalSpools = stockItems.reduce((s, f) => s + f.count, 0);
   const totalUsed = stockItems.reduce((s, f) => s + (f.usedCount ?? 0), 0);
+  const totalIncomingSpools = incomingItems.reduce((s, f) => s + f.count, 0);
   const inStock = stockItems.filter((f) => f.count > 0).length;
   const inUse = stockItems.filter((f) => f.status && f.status !== 'sealed').length;
-  const usedColorsCount = stockItems.filter((f) => (f.usedCount ?? 0) > 0).length;
 
   const visibleSections = filter.sections.length > 0 ? filter.sections : ALL_SECTIONS;
 
@@ -342,11 +342,11 @@ export default function Home() {
               }`}
             >
               Inventory
-              {inStock > 0 && (
+              {totalSpools > 0 && (
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   tab === 'inventory' ? 'bg-blue-500 text-white' : 'bg-blue-500/30 text-blue-300'
                 }`}>
-                  {inStock}
+                  {totalSpools}
                 </span>
               )}
             </button>
@@ -360,11 +360,11 @@ export default function Home() {
             >
               <PackagePlus size={12} className="flex-shrink-0" />
               Incoming
-              {incomingItems.length > 0 && (
+              {totalIncomingSpools > 0 && (
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   tab === 'incoming' ? 'bg-indigo-500 text-white' : 'bg-indigo-500/30 text-indigo-300'
                 }`}>
-                  {incomingItems.length}
+                  {totalIncomingSpools}
                 </span>
               )}
             </button>
@@ -377,11 +377,11 @@ export default function Home() {
               }`}
             >
               Used
-              {usedColorsCount > 0 && (
+              {totalUsed > 0 && (
                 <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${
                   tab === 'used' ? 'bg-amber-500 text-white' : 'bg-amber-500/30 text-amber-300'
                 }`}>
-                  {usedColorsCount}
+                  {totalUsed}
                 </span>
               )}
             </button>
