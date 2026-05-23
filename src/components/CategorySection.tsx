@@ -20,9 +20,9 @@ interface Props {
 }
 
 const SECTION_STYLE: Record<FilamentSection, { bg: string; badge: string; type: string }> = {
-  PLA:   { bg: 'from-blue-600/20 to-blue-500/10 border-blue-500/30',      badge: 'bg-blue-500/20 text-blue-300 border-blue-500/30',      type: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  PETG:  { bg: 'from-emerald-600/20 to-emerald-500/10 border-emerald-500/30', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', type: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-  Other: { bg: 'from-purple-600/20 to-purple-500/10 border-purple-500/30', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30', type: 'bg-purple-500/10 text-purple-400 border-purple-500/20' },
+  PLA:   { bg: 'from-blue-600/20 to-blue-500/10 border-blue-500/30',      badge: 'bg-blue-500/20 text-blue-300 border-blue-500/30',      type: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
+  PETG:  { bg: 'from-emerald-600/20 to-emerald-500/10 border-emerald-500/30', badge: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30', type: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+  Other: { bg: 'from-purple-600/20 to-purple-500/10 border-purple-500/30', badge: 'bg-purple-500/20 text-purple-300 border-purple-500/30', type: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
 };
 
 function sortFilaments(filaments: FilamentColor[], sortMode: SortMode, showUsed: boolean) {
@@ -89,11 +89,21 @@ export default function CategorySection({
             <div key={type}>
               {/* Type sub-header */}
               <div className="flex items-center gap-2 mb-2">
-                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${style.type}`}>
-                  {type}
+                <span className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${style.type}`}>
+                  {(() => {
+                    const i = type.indexOf(' ');
+                    if (i === -1) return type;
+                    return (
+                      <>
+                        <span className="opacity-50 font-medium">{type.slice(0, i)}</span>
+                        {' '}
+                        <span>{type.slice(i + 1)}</span>
+                      </>
+                    );
+                  })()}
                 </span>
-                <div className="flex-1 h-px bg-white/5" />
-                <span className="text-[10px] text-gray-600">
+                <div className="flex-1 h-px bg-white/10" />
+                <span className="text-[10px] text-gray-500">
                   {items.filter((f) => f.count > 0).length}/{items.length}
                 </span>
               </div>
