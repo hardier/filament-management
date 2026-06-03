@@ -57,14 +57,14 @@ export function migrateInventory(raw: unknown[]): FilamentColor[] {
 // ── Local cache ────────────────────────────────────────────────
 
 export function getLocalInventory(): FilamentColor[] {
-  if (typeof window === 'undefined') return getDefaultFilaments();
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(INVENTORY_KEY);
-    if (!raw) return getDefaultFilaments();
+    if (!raw) return [];
     const parsed = JSON.parse(raw) as Record<string, unknown>[];
     return parsed.map(migrate);
   } catch {
-    return getDefaultFilaments();
+    return [];
   }
 }
 

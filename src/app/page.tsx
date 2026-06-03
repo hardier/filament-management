@@ -36,13 +36,21 @@ export default function Home() {
 
     setSyncState('syncing');
     fetchInventory().then((remote) => {
-      if (remote && remote.length > 0) {
+      const isDefaultOnly = remote && remote.length > 0 &&
+        remote.every((f) => (f as FilamentColor).id?.startsWith('default-'));
+
+      if (remote && remote.length > 0 && !isDefaultOnly) {
         const migrated = migrateInventory(remote as unknown[]);
         setInventory(migrated);
         setLocalInventory(migrated);
         setSyncState('synced');
-      } else if (remote === null) {
-        pushInventory(local).then((ok) => setSyncState(ok ? 'synced' : 'error'));
+      } else if (remote === null || isDefaultOnly) {
+        if (local.length > 0) {
+          setInventory(local);
+          pushInventory(local).then((ok) => setSyncState(ok ? 'synced' : 'error'));
+        } else {
+          setSyncState('synced');
+        }
       } else {
         setSyncState('synced');
       }
